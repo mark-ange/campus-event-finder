@@ -1,0 +1,38 @@
+<div class="register-bg">
+  <div class="register-header">
+    <h1 class="register-title">Create Your Account</h1>
+  </div>
+  
+  <form [formGroup]="registerForm" class="register-form">
+    <div class="row full-name-row">
+      <input class="full-name" formControlName="fullName" placeholder="F   U   L   L        N   A   M   E" />
+    </div>
+
+    <div class="row">
+      <label class="label">EMAIL ADDRESS:</label>
+      <input class="input" type="email" formControlName="email" placeholder="EMAIL" />
+    </div>
+
+    <div class="row">
+      <label class="label">Password:</label>
+      <input class="input" type="password" formControlName="password" placeholder="Password" />
+    </div>
+
+    <div class="row">
+      <label class="label">Confirm You Password:</label>
+      <input class="input" type="password" formControlName="confirmPassword" placeholder="Password" />
+    </div>
+
+    <div class="row">
+      <label class="label">Your Department:</label>
+      <input class="input" formControlName="department" placeholder="Enter Your Department" />
+    </div>
+
+    <div class="row">
+      <label class="label">For Dept Admin only:</label>
+      <input class="input" formControlName="adminCode" placeholder="Enter Admin code" />
+    </div>
+  </form>
+
+  <button type="button" class="back-btn" (click)="onBackToLogin()">Back to log in</button>
+</div>
