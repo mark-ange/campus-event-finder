@@ -1,50 +1,37 @@
-<div class="login-wrapper">
+<div class="login-page">
   <div class="login-card">
-
-    <!-- Logo -->
-    <div class="logo-section">
-      <img src="assets/liceo-logo.png" class="logo" />
-      <h1>LICEO DE CAGAYAN<br>UNIVERSITY</h1>
+    <div class="card-header">
+      <img src="assets/liceo-logo.png" alt="Liceo Logo" class="logo" />
+      <h1 class="university-title">LICEO DE CAGAYAN<br />UNIVERSITY</h1>
     </div>
 
-    <h2 class="sign-in-text">SIGN IN YOUR ACCOUNT</h2>
+    <p class="sign-in-title">SIGN IN YOUR ACCOUNT</p>
 
-    <!-- FORM -->
-    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
-
-      <input 
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+      <input
         type="email"
         placeholder="@liceo.edu.ph"
         formControlName="email"
-        class="input-field"
+        class="form-input"
+        autocomplete="email"
       />
 
-      <input 
+      <input
         type="password"
         placeholder="Password"
         formControlName="password"
-        class="input-field"
+        class="form-input"
+        autocomplete="current-password"
       />
 
-      <div class="button-row">
-        <button type="submit" class="login-btn" [disabled]="!loginForm.valid">
-          LOGIN
-        </button>
-
-        <button type="button" (click)="onCreateAccount()" class="create-btn">
-          create an account
-        </button>
+      <div class="row-actions">
+        <button type="submit" class="login-button" [disabled]="!loginForm.valid">LOGIN</button>
+        <button type="button" (click)="onCreateAccount()" class="create-account-button">create an account</button>
       </div>
 
-      <a routerLink="/forgot-password" class="forgot">
-        Forgot password?
-      </a>
-
+      <a class="forgot-password" routerLink="/forgot-password">Forgot password?</a>
     </form>
 
-    <div class="footer-title">
-      CAMPUS EVENT<br>FINDER
-    </div>
-
+    <h2 class="app-title">CAMPUS EVENT<br />FINDER</h2>
   </div>
 </div>

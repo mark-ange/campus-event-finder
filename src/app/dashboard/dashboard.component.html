@@ -1,0 +1,94 @@
+<div class="hub-page">
+  <header class="hub-header">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <button type="button" class="menu-button" aria-label="Open menu" (click)="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="menu-panel" *ngIf="menuOpen">
+      <button type="button" (click)="goToFeatured()">Feature events</button>
+      <button type="button" (click)="goToEvents()">Events</button>
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <img [src]="heroImage" alt="Rodelsa Hall" />
+  </section>
+
+  <main class="hub-main">
+    <section class="section-block" id="featured-section">
+      <h1 class="section-title">Feature events</h1>
+      <div class="featured-grid">
+        <article class="featured-card" *ngFor="let event of featuredEvents">
+          <img [src]="event.image" [alt]="event.title" class="featured-image" />
+          <div class="featured-content">
+            <h2>{{ event.title }}</h2>
+            <p>{{ event.date }}</p>
+            <button type="button" (click)="openDetails(event)">view details</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block events-section" id="events-section">
+      <h1 class="section-title">Events</h1>
+      <div class="events-grid">
+        <article class="event-card" *ngFor="let event of events">
+          <img [src]="event.image" [alt]="event.title" class="event-image" />
+
+          <div class="event-content">
+            <div class="event-top-row">
+              <h3>{{ event.title }}</h3>
+              <div class="event-actions">
+                <button type="button" class="icon-button heart-button" (click)="toggleLike(event)">
+                  <span class="heart" [class.active]="event.liked">&#10084;</span>
+                </button>
+                <span class="count">{{ formatCount(event.likes) }}</span>
+                <button type="button" class="icon-button share-button" (click)="shareEvent(event)">
+                  <span class="share">&#10550;</span>
+                </button>
+              </div>
+            </div>
+
+            <p class="event-line">Date: {{ event.date }}</p>
+            <p class="event-line">Location: {{ event.location }}</p>
+            <p class="event-line">Description: {{ event.description }}</p>
+
+            <div class="comments-row">
+              <button type="button" class="icon-button comment-button" (click)="addComment(event)">
+                <span class="comment">&#128172;</span>
+              </button>
+              <div class="comments-text">
+                <span>comments</span>
+                <span>{{ formatCount(event.comments) }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="details-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
+    <article class="details-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="close-button" (click)="closeDetails()">x</button>
+      <img [src]="selectedEvent.image" [alt]="selectedEvent.title" class="details-image" />
+      <h2>{{ selectedEvent.title }}</h2>
+      <p><strong>Date:</strong> {{ selectedEvent.date }}</p>
+      <p><strong>Location:</strong> {{ selectedEvent.location }}</p>
+      <p><strong>Description:</strong> {{ selectedEvent.description }}</p>
+      <p><strong>Likes:</strong> {{ formatCount(selectedEvent.likes) }}</p>
+      <p><strong>Comments:</strong> {{ formatCount(selectedEvent.comments) }}</p>
+    </article>
+  </div>
+</div>
