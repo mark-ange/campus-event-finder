@@ -1,0 +1,26 @@
+<div class="profile-page" [style.background-image]="'url(' + backgroundImage + ')'">
+  <header class="profile-header">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <div class="header-icons">
+      <button type="button" (click)="goHome()">⌂</button>
+      <button type="button">💬</button>
+      <button type="button">🔔</button>
+      <button type="button">⚙</button>
+    </div>
+  </header>
+
+  <section class="profile-card">
+    <img [src]="profileImage" alt="Student profile image" class="avatar" />
+    <h1>Student profile</h1>
+    <p>I.T Deapartment</p>
+    <p>student mail</p>
+    <p>student number</p>
+  </section>
+</div>

@@ -1,0 +1,209 @@
+.admin-page {
+  min-height: 100vh;
+  background: #e8e8e8;
+  font-family: 'Arial Narrow', Arial, sans-serif;
+}
+
+.admin-top {
+  height: 52px;
+  background: #600000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border: 1px solid #12436f;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Franklin Gothic Heavy', 'Arial Black', sans-serif;
+  color: #ffd400;
+  font-size: 22px;
+  line-height: 0.9;
+}
+
+.top-icons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-icons button {
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-title-area {
+  background: #8e0000;
+  color: #fff;
+  text-align: center;
+  padding: 16px 10px 12px;
+}
+
+.admin-title-area h1 {
+  margin: 0;
+  font-size: 52px;
+  font-family: Rockwell, 'Roboto Slab', serif;
+}
+
+.admin-title-area h2 {
+  margin: 0;
+  font-size: 36px;
+  font-family: Rockwell, 'Roboto Slab', serif;
+}
+
+.events-heading {
+  margin: 4px 0 10px;
+  text-align: center;
+  font-size: 58px;
+  font-family: 'Times New Roman', serif;
+  font-weight: 500;
+}
+
+.events-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 0 10px;
+}
+
+.event-card {
+  border: 3px solid #0f89ff;
+  border-radius: 32px;
+  background: #d9d9d9;
+  overflow: hidden;
+}
+
+.event-head {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 12px;
+}
+
+.event-image {
+  width: 100%;
+  height: 182px;
+  object-fit: cover;
+}
+
+.event-meta {
+  padding-top: 6px;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.event-meta p {
+  margin: 0 0 9px;
+}
+
+.event-body {
+  padding: 5px 12px 10px;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title-row h4 {
+  margin: 0;
+  font-family: Rockwell, 'Roboto Slab', serif;
+  font-size: 40px;
+  line-height: 0.95;
+  color: #530000;
+}
+
+.likes {
+  font-size: 32px;
+  color: #6d0000;
+}
+
+.description {
+  margin: 10px 0 6px;
+  font-size: 28px;
+  line-height: 1.08;
+  color: #232323;
+}
+
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.comments {
+  font-size: 33px;
+  color: #4d0000;
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.status {
+  background: #09bf2a;
+  color: #111;
+  border-radius: 999px;
+  padding: 2px 18px;
+  font-size: 30px;
+}
+
+.status.draft {
+  background: #df7f00;
+}
+
+.danger,
+.edit {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.danger {
+  color: #111;
+  font-size: 37px;
+}
+
+.edit {
+  color: #111;
+  font-size: 34px;
+}
+
+.pager {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 52px;
+  font-family: 'Times New Roman', serif;
+}
+
+.pager span {
+  display: inline-block;
+  margin: 0 44px;
+}
+
+@media (max-width: 900px) {
+  .events-row {
+    grid-template-columns: 1fr;
+  }
+}
