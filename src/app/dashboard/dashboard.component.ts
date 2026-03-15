@@ -34,11 +34,6 @@ export class DashboardComponent implements OnInit {
   selectedEventComments: EventComment[] = [];
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
     this.currentUser = this.authService.getCurrentUser();
     this.loadEvents();
     this.featuredEvents = this.events.slice(0, 4);
@@ -133,6 +128,14 @@ export class DashboardComponent implements OnInit {
     if (target.dataset['fallbackApplied'] === 'true') return;
     target.dataset['fallbackApplied'] = 'true';
     target.src = this.fallbackEventImage;
+  }
+
+  trackByEventId(index: number, event: HubEvent): string {
+    return event.id;
+  }
+
+  trackByCommentId(index: number, comment: EventComment): string {
+    return comment.id;
   }
 
   addComment(): void {

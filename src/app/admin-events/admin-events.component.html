@@ -52,7 +52,7 @@
     <h3 class="events-heading">Your Events</h3>
 
     <section class="events-row" aria-label="Your events">
-      <article *ngFor="let event of pagedEvents" class="event-card">
+      <article *ngFor="let event of pagedEvents; trackBy: trackByEventId" class="event-card">
         <div class="event-head">
           <img
             class="event-image"
@@ -105,6 +105,15 @@
               >
                 {{ getStatusLabel(event) }}
               </span>
+
+              <button
+                type="button"
+                class="toggle-status"
+                [class.make-active]="getEventStatus(event) === 'inactive'"
+                (click)="toggleAvailability(event)"
+              >
+                {{ getEventStatus(event) === 'inactive' ? 'Make Active' : 'Make Inactive' }}
+              </button>
 
               <button type="button" class="danger" (click)="deleteEvent(event.id)" aria-label="Delete event">
                 <span aria-hidden="true">&#128465;</span>
@@ -248,7 +257,7 @@
       <p class="modal-subtitle" *ngIf="commentsEvent">{{ commentsEvent.title }}</p>
 
       <div class="comments-list" *ngIf="commentsEvent">
-        <div class="comment" *ngFor="let comment of eventComments">
+        <div class="comment" *ngFor="let comment of eventComments; trackBy: trackByCommentId">
           <div class="comment-head">
             <span class="comment-author">{{ comment.author }}</span>
             <span class="comment-role">{{ comment.role }}</span>

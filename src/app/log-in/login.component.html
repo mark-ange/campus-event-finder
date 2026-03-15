@@ -24,6 +24,8 @@
         autocomplete="current-password"
       />
 
+      <p class="message error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
       <div class="row-actions">
         <button type="submit" class="login-button" [disabled]="!loginForm.valid">LOGIN</button>
         <button type="button" (click)="onCreateAccount()" class="create-account-button">create an account</button>

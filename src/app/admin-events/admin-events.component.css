@@ -263,6 +263,25 @@
   background: #9d9d9d;
 }
 
+.toggle-status {
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.12);
+  color: #111;
+}
+
+.toggle-status.make-active {
+  background: #09bf2a;
+}
+
+.toggle-status:hover {
+  filter: brightness(1.03);
+}
+
 .danger,
 .edit {
   border: 0;

@@ -8,6 +8,7 @@ export interface User {
   password: string;
   department: string;
   role: 'student' | 'admin';
+  profileImage?: string;
   createdAt: Date;
 }
 
@@ -109,6 +110,29 @@ export class AuthService {
     localStorage.setItem('currentUser', JSON.stringify(user));
 
     return { success: true, message: 'Login successful' };
+  }
+
+  isEmailRegistered(email: string): boolean {
+    return this.users.some(user => user.email === email);
+  }
+
+  resetPassword(email: string, newPassword: string): { success: boolean; message: string } {
+    const user = this.users.find(existing => existing.email === email);
+    if (!user) {
+      return { success: false, message: 'No account found for this email' };
+    }
+
+    user.password = newPassword;
+    this.saveUsers();
+
+    const current = this.currentUserSubject.value;
+    if (current?.email === email) {
+      const updatedUser = { ...current, password: newPassword };
+      this.currentUserSubject.next(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+
+    return { success: true, message: 'Password updated' };
   }
 
   logout(): void {

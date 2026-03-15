@@ -71,17 +71,6 @@ export class AdminEventsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
-    if (!this.authService.isAdmin()) {
-      alert('Admin access only. Log in with the admin code to continue.');
-      this.router.navigate(['/dashboard']);
-      return;
-    }
-
     this.currentUser = this.authService.getCurrentUser();
     this.loadEvents();
     this.ensurePageInRange();
@@ -331,6 +320,12 @@ export class AdminEventsComponent implements OnInit {
     this.eventComments = this.engagement.getComments(this.commentsEvent.id);
   }
 
+  toggleAvailability(event: HubEvent): void {
+    const status = this.getEventStatus(event);
+    event.status = status === 'inactive' ? 'active' : 'inactive';
+    this.saveEvents();
+  }
+
   shareEvent(event: HubEvent): void {
     if (navigator.share) {
       navigator.share({
@@ -353,6 +348,14 @@ export class AdminEventsComponent implements OnInit {
     if (target.dataset['fallbackApplied'] === 'true') return;
     target.dataset['fallbackApplied'] = 'true';
     target.src = this.fallbackEventImage;
+  }
+
+  trackByEventId(index: number, event: HubEvent): string {
+    return event.id;
+  }
+
+  trackByCommentId(index: number, comment: EventComment): string {
+    return comment.id;
   }
 
   getEventStatus(event: HubEvent): EventStatus {

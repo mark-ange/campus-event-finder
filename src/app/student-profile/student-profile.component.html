@@ -25,7 +25,29 @@
   </header>
 
   <section class="profile-card" aria-label="Student profile card">
-    <img [src]="profileImage" alt="Student profile image" class="avatar" />
+    <div class="avatar-wrap">
+      <img
+        [src]="profileImageUrl"
+        alt="Student profile image"
+        class="avatar"
+        (error)="onAvatarError($event)"
+      />
+      <button
+        type="button"
+        class="avatar-edit"
+        (click)="openAvatarPicker(avatarInput)"
+        aria-label="Change profile photo"
+      >
+        <span aria-hidden="true">&#9998;</span>
+      </button>
+      <input
+        #avatarInput
+        type="file"
+        accept="image/*"
+        class="avatar-input"
+        (change)="onAvatarSelected($event)"
+      />
+    </div>
     <h1>Student profile</h1>
 
     <div class="profile-details" *ngIf="currentUser">
@@ -33,5 +55,7 @@
       <p class="detail">{{ currentUser.email }}</p>
       <p class="detail">{{ currentUser.id }}</p>
     </div>
+
+    <p class="avatar-message" *ngIf="avatarMessage">{{ avatarMessage }}</p>
   </section>
 </div>

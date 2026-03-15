@@ -29,11 +29,6 @@ export class SettingsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
     this.currentUser = this.authService.getCurrentUser();
     if (this.currentUser) {
       this.settingsForm.patchValue({
@@ -73,4 +68,3 @@ export class SettingsComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 }
-

@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService, LoginCredentials } from '../services/auth.service';
@@ -6,7 +7,7 @@ import { AuthService, LoginCredentials } from '../services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [NgIf, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -40,11 +41,7 @@ export class LoginComponent implements OnInit {
       const result = this.authService.login(credentials);
       
       if (result.success) {
-        if (this.authService.isAdmin()) {
-          this.router.navigate(['/admin-events']);
-        } else {
-          this.router.navigate(['/dashboard']);
-        }
+        this.router.navigate(['/dashboard']);
       } else {
         this.errorMessage = result.message;
       }

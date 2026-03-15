@@ -17,17 +17,16 @@ export class StudentProfileComponent implements OnInit {
   currentUser: User | null = null;
 
   readonly logoImage = 'assets/liceo-logo.png';
-  readonly profileImage =
+  readonly defaultProfileImage =
     'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=500&q=80';
   readonly backgroundImage = 'assets/background log-in.png';
 
-  ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
-    }
+  profileImageUrl = this.defaultProfileImage;
+  avatarMessage = '';
 
+  ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    this.profileImageUrl = this.currentUser?.profileImage || this.defaultProfileImage;
   }
 
   goHome(): void {
@@ -44,5 +43,61 @@ export class StudentProfileComponent implements OnInit {
 
   openSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  openAvatarPicker(input: HTMLInputElement): void {
+    this.avatarMessage = '';
+    input.click();
+  }
+
+  onAvatarSelected(event: Event): void {
+    this.avatarMessage = '';
+
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.avatarMessage = 'Please choose an image file.';
+      input.value = '';
+      return;
+    }
+
+    const maxBytes = 1_000_000;
+    if (file.size > maxBytes) {
+      this.avatarMessage = 'Please choose an image under 1MB.';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result) {
+        this.avatarMessage = 'Could not read the selected image.';
+        return;
+      }
+
+      this.authService.updateProfile({ profileImage: result });
+      this.currentUser = this.authService.getCurrentUser();
+      this.profileImageUrl = result;
+      this.avatarMessage = 'Profile photo updated.';
+    };
+
+    reader.onerror = () => {
+      this.avatarMessage = 'Could not read the selected image.';
+    };
+
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  onAvatarError(event: Event): void {
+    const target = event.target as HTMLImageElement | null;
+    if (!target) return;
+
+    if (target.dataset['fallbackApplied'] === 'true') return;
+    target.dataset['fallbackApplied'] = 'true';
+    target.src = this.defaultProfileImage;
   }
 }

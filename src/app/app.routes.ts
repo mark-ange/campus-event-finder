@@ -8,16 +8,19 @@ import { ForgotPasswordComponent } from './forgot-password/forgot-password.compo
 import { MessagesComponent } from './messages/messages.component';
 import { NotificationsComponent } from './notifications/notifications.component';
 import { SettingsComponent } from './settings/settings.component';
+import { adminGuard } from './guards/admin.guard';
+import { authGuard } from './guards/auth.guard';
+import { studentGuard } from './guards/student.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'sign-up', component: SignUpComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'admin-events', component: AdminEventsComponent },
-  { path: 'profile', component: StudentProfileComponent },
-  { path: 'messages', component: MessagesComponent },
-  { path: 'notifications', component: NotificationsComponent },
-  { path: 'settings', component: SettingsComponent }
+  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+  { path: 'admin-events', component: AdminEventsComponent, canActivate: [adminGuard] },
+  { path: 'profile', component: StudentProfileComponent, canActivate: [studentGuard] },
+  { path: 'messages', component: MessagesComponent, canActivate: [authGuard] },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }
 ];

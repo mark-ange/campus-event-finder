@@ -17,8 +17,20 @@
 
   <nav class="menu-strip" *ngIf="menuOpen" aria-label="Dashboard menu">
     <button type="button" (click)="navigateTo('/dashboard')">Home</button>
-    <button type="button" (click)="navigateTo('/admin-events')">Admin Events</button>
-    <button type="button" (click)="navigateTo('/profile')">Profile</button>
+    <button
+      type="button"
+      *ngIf="currentUser?.role === 'admin'"
+      (click)="navigateTo('/admin-events')"
+    >
+      Admin Events
+    </button>
+    <button
+      type="button"
+      *ngIf="currentUser?.role === 'student'"
+      (click)="navigateTo('/profile')"
+    >
+      Profile
+    </button>
     <button type="button" (click)="logout()">Logout</button>
   </nav>
 
@@ -32,7 +44,7 @@
     <section class="featured-grid" aria-label="Featured events">
       <article
         class="featured-card"
-        *ngFor="let event of featuredEvents"
+        *ngFor="let event of featuredEvents; trackBy: trackByEventId"
         (click)="openDetails(event)"
         tabindex="0"
         (keydown.enter)="openDetails(event)"
@@ -56,7 +68,7 @@
     <section class="events-grid" aria-label="All events">
       <article
         class="event-card"
-        *ngFor="let event of events"
+        *ngFor="let event of events; trackBy: trackByEventId"
         (click)="openDetails(event)"
         tabindex="0"
         (keydown.enter)="openDetails(event)"
@@ -158,7 +170,7 @@
         </div>
 
         <div class="comments-list" *ngIf="selectedEventComments.length; else noComments">
-          <div class="comment" *ngFor="let comment of selectedEventComments">
+          <div class="comment" *ngFor="let comment of selectedEventComments; trackBy: trackByCommentId">
             <div class="comment-head">
               <span class="comment-author">{{ comment.author }}</span>
               <span class="comment-role">{{ comment.role }}</span>
