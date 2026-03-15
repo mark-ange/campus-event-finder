@@ -1,23 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-
-interface HubEvent {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  image: string;
-  category: string;
-  description: string;
-  summary: string;
-  location: string;
-  organizer: string;
-  capacity: number;
-  registrations: number;
-}
+import { AuthService, User } from '../services/auth.service';
+import { EventComment, EventEngagementService } from '../services/event-engagement.service';
+import { DEFAULT_EVENTS, EVENTS_STORAGE_KEY, EventStatus, HubEvent, mergeEvents } from '../services/event-store';
 
 interface EventFormData {
   title: string;
@@ -30,6 +17,7 @@ interface EventFormData {
   organizer: string;
   capacity: number;
   image: string;
+  status: EventStatus;
   registrations?: number;
 }
 
@@ -38,15 +26,30 @@ interface EventFormData {
   standalone: true,
   templateUrl: './admin-events.component.html',
   styleUrls: ['./admin-events.component.css'],
-  imports: [NgFor, FormsModule]
+  imports: [NgFor, NgIf, FormsModule, DatePipe]
 })
 export class AdminEventsComponent implements OnInit {
-  private router = inject(Router);
-  private authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly engagement = inject(EventEngagementService);
+
+  readonly logoImage = 'assets/liceo-logo.png';
+  readonly fallbackEventImage = 'assets/liceo-logo.png';
+
+  currentUser: User | null = null;
+  menuOpen = false;
+  editorOpen = false;
+  commentsOpen = false;
+
+  pageIndex = 1;
+  private readonly pageSize = 2;
 
   events: HubEvent[] = [];
   isEditing = false;
   editingEventId: string | null = null;
+  commentsEvent: HubEvent | null = null;
+  commentText = '';
+  eventComments: EventComment[] = [];
   
   formData: EventFormData = {
     title: '',
@@ -58,7 +61,8 @@ export class AdminEventsComponent implements OnInit {
     location: '',
     organizer: '',
     capacity: 50,
-    image: ''
+    image: '',
+    status: 'active'
   };
 
   categories = [
@@ -67,60 +71,142 @@ export class AdminEventsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Check if user is logged in and is admin
-    if (!this.authService.isLoggedIn() || !this.authService.isAdmin()) {
+    if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/login']);
       return;
     }
-    
+
+    if (!this.authService.isAdmin()) {
+      alert('Admin access only. Log in with the admin code to continue.');
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    this.currentUser = this.authService.getCurrentUser();
     this.loadEvents();
+    this.ensurePageInRange();
   }
 
   private loadEvents(): void {
-    // Load events from localStorage or API
-    const savedEvents = localStorage.getItem('campusEvents');
+    const savedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
     if (savedEvents) {
-      this.events = JSON.parse(savedEvents);
-    } else {
-      // Default events for demo
-      this.events = [
-        {
-          id: 'ev-1',
-          title: 'ByteCode 2026: 24-Hour Hackathon',
-          date: 'March 18-19, 2026',
-          time: '9:00 AM - 9:00 PM',
-          image: 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=1200&q=80',
-          category: 'Technology',
-          description: 'A 24-hour coding marathon where students work in teams to build innovative software solutions.',
-          summary: 'Join us for an intense 24-hour coding challenge!',
-          location: 'Computer Science Building',
-          organizer: 'Computer Science Department',
-          capacity: 100,
-          registrations: 45
-        },
-        {
-          id: 'ev-2',
-          title: 'The Bridge-Building Challenge',
-          date: 'April 05, 2026',
-          time: '10:00 AM - 4:00 PM',
-          image: 'https://images.unsplash.com/photo-1475776408506-9a5371e7a068?auto=format&fit=crop&w=1200&q=80',
-          category: 'Engineering',
-          description: 'Students compete to design and build the strongest bridge using limited materials.',
-          summary: 'Test your engineering skills in this hands-on competition!',
-          location: 'Engineering Lab',
-          organizer: 'Engineering Society',
-          capacity: 50,
-          registrations: 30
+      try {
+        const parsed = JSON.parse(savedEvents) as unknown;
+        if (Array.isArray(parsed)) {
+          this.events = parsed as HubEvent[];
         }
-      ];
+      } catch {
+      }
+    }
+
+    const merged = mergeEvents(this.events.length ? this.events : [], DEFAULT_EVENTS);
+    this.events = merged.events;
+
+    if (!savedEvents || merged.changed) {
+      this.saveEvents();
     }
   }
 
-  saveEvents(): void {
-    localStorage.setItem('campusEvents', JSON.stringify(this.events));
+  private saveEvents(): void {
+    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(this.events));
   }
 
-  addEvent(): void {
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
+  }
+
+  goHome(): void {
+    this.menuOpen = false;
+    this.router.navigate(['/dashboard']);
+  }
+
+  openMessages(): void {
+    this.menuOpen = false;
+    this.router.navigate(['/messages']);
+  }
+
+  openNotifications(): void {
+    this.menuOpen = false;
+    this.router.navigate(['/notifications']);
+  }
+
+  openSettings(): void {
+    this.menuOpen = false;
+    this.router.navigate(['/settings']);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.events.length / this.pageSize));
+  }
+
+  get pagedEvents(): HubEvent[] {
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return this.events.slice(start, start + this.pageSize);
+  }
+
+  prevPage(): void {
+    this.pageIndex = Math.max(1, this.pageIndex - 1);
+  }
+
+  nextPage(): void {
+    this.pageIndex = Math.min(this.totalPages, this.pageIndex + 1);
+  }
+
+  private ensurePageInRange(): void {
+    this.pageIndex = Math.min(Math.max(1, this.pageIndex), this.totalPages);
+  }
+
+  openCreate(): void {
+    this.commentsOpen = false;
+    this.commentsEvent = null;
+    this.isEditing = false;
+    this.editingEventId = null;
+    this.resetForm();
+    if (this.currentUser?.department) {
+      this.formData.organizer = this.currentUser.department;
+    }
+    this.menuOpen = false;
+    this.editorOpen = true;
+  }
+
+  startEdit(event: HubEvent): void {
+    this.commentsOpen = false;
+    this.commentsEvent = null;
+    this.isEditing = true;
+    this.editingEventId = event.id;
+    this.formData = {
+      title: event.title,
+      date: event.date,
+      time: event.time,
+      category: event.category,
+      description: event.description,
+      summary: event.summary,
+      location: event.location,
+      organizer: event.organizer,
+      capacity: event.capacity,
+      image: event.image,
+      status: this.getEventStatus(event)
+    };
+    this.menuOpen = false;
+    this.editorOpen = true;
+  }
+
+  closeEditor(): void {
+    this.editorOpen = false;
+    this.resetForm();
+  }
+
+  submitEditor(): void {
+    if (this.isEditing) {
+      this.updateEvent();
+    } else {
+      this.addEvent();
+    }
+
+    this.closeEditor();
+  }
+
+  private addEvent(): void {
     const newEvent: HubEvent = {
       id: 'ev-' + Date.now(),
       title: this.formData.title,
@@ -133,24 +219,19 @@ export class AdminEventsComponent implements OnInit {
       organizer: this.formData.organizer,
       capacity: this.formData.capacity,
       image: this.formData.image,
+      status: this.formData.status,
       registrations: 0
     };
 
     this.events.unshift(newEvent);
     this.saveEvents();
-    this.resetForm();
-    alert('Event created successfully!');
+    this.ensurePageInRange();
   }
 
-  editEvent(event: HubEvent): void {
-    this.isEditing = true;
-    this.editingEventId = event.id;
-    this.formData = { ...event };
-  }
-
-  updateEvent(): void {
+  private updateEvent(): void {
     const index = this.events.findIndex(e => e.id === this.editingEventId);
     if (index !== -1) {
+      const existing = this.events[index];
       const updatedEvent: HubEvent = {
         id: this.editingEventId!,
         title: this.formData.title,
@@ -163,12 +244,12 @@ export class AdminEventsComponent implements OnInit {
         organizer: this.formData.organizer,
         capacity: this.formData.capacity,
         image: this.formData.image,
-        registrations: this.events[index].registrations // Preserve existing registrations
+        status: this.formData.status,
+        registrations: existing.registrations
       };
       this.events[index] = updatedEvent;
       this.saveEvents();
-      this.resetForm();
-      alert('Event updated successfully!');
+      this.ensurePageInRange();
     }
   }
 
@@ -176,11 +257,11 @@ export class AdminEventsComponent implements OnInit {
     if (confirm('Are you sure you want to delete this event?')) {
       this.events = this.events.filter(e => e.id !== eventId);
       this.saveEvents();
-      alert('Event deleted successfully!');
+      this.ensurePageInRange();
     }
   }
 
-  resetForm(): void {
+  private resetForm(): void {
     this.isEditing = false;
     this.editingEventId = null;
     this.formData = {
@@ -193,23 +274,97 @@ export class AdminEventsComponent implements OnInit {
       location: '',
       organizer: '',
       capacity: 50,
-      image: ''
+      image: '',
+      status: 'active'
     };
   }
 
-  onSubmit(): void {
-    if (this.isEditing) {
-      this.updateEvent();
+  getLikes(eventId: string): number {
+    return this.engagement.getLikes(eventId);
+  }
+
+  getComments(eventId: string): number {
+    return this.engagement.getCommentCount(eventId);
+  }
+
+  formatCount(value: number): string {
+    return this.engagement.formatCount(value);
+  }
+
+  likeEvent(event: HubEvent): void {
+    this.engagement.like(event.id);
+  }
+
+  openComments(event: HubEvent): void {
+    this.editorOpen = false;
+    this.menuOpen = false;
+    this.commentsEvent = event;
+    this.commentText = '';
+    this.eventComments = this.engagement.getComments(event.id);
+    this.commentsOpen = true;
+  }
+
+  closeComments(): void {
+    this.commentsOpen = false;
+    this.commentsEvent = null;
+    this.commentText = '';
+    this.eventComments = [];
+  }
+
+  submitComment(): void {
+    if (!this.commentsEvent) return;
+
+    const author = this.currentUser?.fullName ?? 'Anonymous';
+    const role = this.currentUser?.role ?? 'admin';
+    this.engagement.addComment(this.commentsEvent.id, {
+      author,
+      role,
+      text: this.commentText
+    });
+    this.commentText = '';
+    this.eventComments = this.engagement.getComments(this.commentsEvent.id);
+  }
+
+  deleteComment(commentId: string): void {
+    if (!this.commentsEvent) return;
+    this.engagement.deleteComment(this.commentsEvent.id, commentId);
+    this.eventComments = this.engagement.getComments(this.commentsEvent.id);
+  }
+
+  shareEvent(event: HubEvent): void {
+    if (navigator.share) {
+      navigator.share({
+        title: event.title,
+        text: event.summary || event.description,
+        url: window.location.href
+      });
     } else {
-      this.addEvent();
+      const shareText = `${event.title}\\n${event.summary || event.description}\\n${window.location.href}`;
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('Event details copied to clipboard!');
+      });
     }
   }
 
-  cancelEdit(): void {
-    this.resetForm();
+  onImageError(event: Event): void {
+    const target = event.target as HTMLImageElement | null;
+    if (!target) return;
+
+    if (target.dataset['fallbackApplied'] === 'true') return;
+    target.dataset['fallbackApplied'] = 'true';
+    target.src = this.fallbackEventImage;
   }
 
-  goBack(): void {
-    this.router.navigate(['/dashboard']);
+  getEventStatus(event: HubEvent): EventStatus {
+    if (event.status === 'inactive') return 'inactive';
+    if (event.status === 'draft') return 'draft';
+    return 'active';
+  }
+
+  getStatusLabel(event: HubEvent): string {
+    const status = this.getEventStatus(event);
+    if (status === 'draft') return 'draft';
+    if (status === 'inactive') return 'Inactive';
+    return 'Active';
   }
 }

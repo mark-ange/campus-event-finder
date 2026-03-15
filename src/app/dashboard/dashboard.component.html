@@ -37,7 +37,12 @@
         tabindex="0"
         (keydown.enter)="openDetails(event)"
       >
-        <img class="featured-image" [src]="event.image" [alt]="event.title" />
+        <img
+          class="featured-image"
+          [src]="event.image || fallbackEventImage"
+          [alt]="event.title"
+          (error)="onImageError($event)"
+        />
         <div class="featured-content">
           <h2>{{ event.title }}</h2>
           <p>{{ event.date }}</p>
@@ -57,7 +62,12 @@
         (keydown.enter)="openDetails(event)"
       >
         <div class="event-media">
-          <img class="event-image" [src]="event.image" [alt]="event.title" />
+          <img
+            class="event-image"
+            [src]="event.image || fallbackEventImage"
+            [alt]="event.title"
+            (error)="onImageError($event)"
+          />
         </div>
 
         <div class="event-body">
@@ -120,7 +130,12 @@
         x
       </button>
 
-      <img class="details-image" [src]="selectedEvent.image" [alt]="selectedEvent.title" />
+      <img
+        class="details-image"
+        [src]="selectedEvent.image || fallbackEventImage"
+        [alt]="selectedEvent.title"
+        (error)="onImageError($event)"
+      />
       <h2>{{ selectedEvent.title }}</h2>
       <p><strong>Date:</strong> {{ selectedEvent.date }} - {{ selectedEvent.time }}</p>
       <p><strong>Location:</strong> {{ selectedEvent.location }}</p>
@@ -135,6 +150,41 @@
       <p class="details-capacity">
         {{ selectedEvent.registrations }} / {{ selectedEvent.capacity }} registered
       </p>
+
+      <section class="comments-section" aria-label="Event comments">
+        <div class="comments-header">
+          <h3>Comments</h3>
+          <span class="comments-total">{{ formatCount(getComments(selectedEvent.id)) }}</span>
+        </div>
+
+        <div class="comments-list" *ngIf="selectedEventComments.length; else noComments">
+          <div class="comment" *ngFor="let comment of selectedEventComments">
+            <div class="comment-head">
+              <span class="comment-author">{{ comment.author }}</span>
+              <span class="comment-role">{{ comment.role }}</span>
+              <span class="comment-time">{{ comment.createdAt | date: 'short' }}</span>
+            </div>
+            <p class="comment-text">{{ comment.text }}</p>
+          </div>
+        </div>
+
+        <ng-template #noComments>
+          <p class="no-comments">No comments yet. Be the first to comment.</p>
+        </ng-template>
+
+        <form class="comment-form" (ngSubmit)="addComment()">
+          <textarea
+            class="comment-input"
+            name="commentText"
+            [(ngModel)]="commentText"
+            rows="2"
+            maxlength="280"
+            placeholder="Write a comment..."
+            required
+          ></textarea>
+          <button type="submit" class="comment-submit" [disabled]="!commentText.trim()">Post</button>
+        </form>
+      </section>
     </div>
   </div>
 </div>

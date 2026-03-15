@@ -1,4 +1,4 @@
-.profile-page {
+.page {
   min-height: 100vh;
   background-size: cover;
   background-position: center;
@@ -6,7 +6,7 @@
   font-family: 'Arial Narrow', Arial, sans-serif;
 }
 
-.profile-header {
+.topbar {
   height: 52px;
   background: #600000;
   display: flex;
@@ -38,13 +38,13 @@
   font-family: 'Franklin Gothic Heavy', 'Arial Black', sans-serif;
 }
 
-.header-icons {
+.icons {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.header-icons button {
+.icons button {
   border: 0;
   background: transparent;
   color: #111;
@@ -54,56 +54,38 @@
   padding: 0;
 }
 
-.header-icons button:hover {
-  filter: brightness(0.95);
-}
-
-.profile-card {
+.card {
   width: min(520px, 92vw);
   margin: 34px auto 0;
   background: #890000;
   border-radius: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 58px 20px 44px;
+  padding: 42px 22px 44px;
   box-sizing: border-box;
   color: #fff;
+  text-align: center;
 }
 
-.avatar {
-  width: 138px;
-  height: 138px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 4px solid rgba(255, 212, 0, 0.35);
-}
-
-.profile-card h1 {
-  margin: 18px 0 10px;
+.card h1 {
+  margin: 0 0 10px;
   font-size: 54px;
   line-height: 1;
   font-family: Rockwell, 'Roboto Slab', serif;
-  text-align: center;
 }
 
-.profile-details {
-  text-align: center;
-}
-
-.detail {
-  margin: 10px 0;
+.card p {
+  margin: 0;
   font-size: 22px;
-  line-height: 1.1;
+  line-height: 1.2;
   font-family: Rockwell, 'Roboto Slab', serif;
 }
 
 @media (max-width: 680px) {
-  .profile-card h1 {
+  .card h1 {
     font-size: 40px;
   }
 
-  .detail {
+  .card p {
     font-size: 20px;
   }
 }
+

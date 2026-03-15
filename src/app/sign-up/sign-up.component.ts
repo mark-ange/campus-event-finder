@@ -52,7 +52,6 @@ export class SignUpComponent {
         this.successMessage = result.message;
         this.errorMessage = '';
         
-        // Redirect to login after successful registration
         setTimeout(() => {
           this.router.navigate(['/login']);
         }, 2000);

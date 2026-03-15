@@ -1,41 +1,28 @@
-import { NgIf } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, User } from '../services/auth.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
-  selector: 'app-student-profile',
+  selector: 'app-messages',
   standalone: true,
-  imports: [NgIf],
-  templateUrl: './student-profile.component.html',
-  styleUrls: ['./student-profile.component.css']
+  templateUrl: './messages.component.html',
+  styleUrls: ['./messages.component.css']
 })
-export class StudentProfileComponent implements OnInit {
+export class MessagesComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
 
-  currentUser: User | null = null;
-
   readonly logoImage = 'assets/liceo-logo.png';
-  readonly profileImage =
-    'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=500&q=80';
   readonly backgroundImage = 'assets/background log-in.png';
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/login']);
-      return;
     }
-
-    this.currentUser = this.authService.getCurrentUser();
   }
 
   goHome(): void {
     this.router.navigate(['/dashboard']);
-  }
-
-  openMessages(): void {
-    this.router.navigate(['/messages']);
   }
 
   openNotifications(): void {
@@ -46,3 +33,4 @@ export class StudentProfileComponent implements OnInit {
     this.router.navigate(['/settings']);
   }
 }
+

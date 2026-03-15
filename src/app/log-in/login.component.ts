@@ -19,7 +19,6 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
-    // Redirect to dashboard if already logged in
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
       return;
@@ -41,7 +40,6 @@ export class LoginComponent implements OnInit {
       const result = this.authService.login(credentials);
       
       if (result.success) {
-        // Redirect based on user role
         if (this.authService.isAdmin()) {
           this.router.navigate(['/admin-events']);
         } else {

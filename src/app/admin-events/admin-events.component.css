@@ -52,8 +52,55 @@
 .admin-title-area {
   background: #8e0000;
   color: #fff;
-  text-align: center;
-  padding: 16px 10px 12px;
+  padding: 16px 18px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.title-left {
+  text-align: left;
+}
+
+.title-icons {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.title-icons button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font-size: 30px;
+  line-height: 1;
+  color: #111;
+}
+
+.admin-menu {
+  background: #600000;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 8px 10px 10px;
+}
+
+.admin-menu button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-menu button:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .admin-title-area h1 {
@@ -131,8 +178,26 @@
 }
 
 .likes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 32px;
   color: #6d0000;
+}
+
+.likes button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.metric-value {
+  min-width: 54px;
+  display: inline-block;
+  text-align: right;
 }
 
 .description {
@@ -149,8 +214,30 @@
 }
 
 .comments {
-  font-size: 33px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   color: #4d0000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 2px;
+  font-size: 33px;
+}
+
+.comments-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 30px;
+}
+
+.comments-count {
+  font-size: 34px;
+  line-height: 1;
 }
 
 .admin-actions {
@@ -172,22 +259,34 @@
   background: #df7f00;
 }
 
+.status.inactive {
+  background: #9d9d9d;
+}
+
 .danger,
 .edit {
   border: 0;
   background: transparent;
   cursor: pointer;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  text-align: right;
+  color: #111;
 }
 
-.danger {
-  color: #111;
-  font-size: 37px;
-}
-
-.edit {
-  color: #111;
+.danger span[aria-hidden],
+.edit span[aria-hidden] {
   font-size: 34px;
+  line-height: 1;
+}
+
+.action-text {
+  display: inline-block;
+  font-size: 26px;
+  line-height: 1;
 }
 
 .pager {
@@ -197,13 +296,250 @@
   font-family: 'Times New Roman', serif;
 }
 
+.pager button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 12px;
+}
+
+.pager button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .pager span {
   display: inline-block;
   margin: 0 44px;
 }
 
+.empty-state {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 26px;
+  font-family: Rockwell, 'Roboto Slab', serif;
+  color: #530000;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  z-index: 50;
+}
+
+.modal {
+  width: min(820px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  box-sizing: border-box;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+}
+
+.modal-title {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-family: Rockwell, 'Roboto Slab', serif;
+  color: #530000;
+}
+
+.modal-subtitle {
+  margin: -6px 0 14px;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.comment {
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fafafa;
+  font-family: Arial, sans-serif;
+}
+
+.comment-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.comment-author {
+  font-weight: 800;
+  color: #111;
+}
+
+.comment-role {
+  font-size: 10px;
+  text-transform: uppercase;
+  background: #600000;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.comment-time {
+  margin-left: auto;
+  font-size: 10px;
+  color: #555;
+}
+
+.comment-delete {
+  border: 0;
+  background: transparent;
+  color: #8b0000;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.comment-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #232323;
+}
+
+.no-comments {
+  margin: 12px 0 0;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #555;
+}
+
+.comment-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-input {
+  border: 2px solid #d3d3d3;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.comment-input:focus {
+  outline: 2px solid #0f89ff;
+  border-color: transparent;
+}
+
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: Arial, sans-serif;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #530000;
+}
+
+.input,
+.select,
+.textarea {
+  border: 2px solid #d3d3d3;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 16px;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: 2px solid #0f89ff;
+  border-color: transparent;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.primary,
+.secondary {
+  border: 0;
+  border-radius: 999px;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #600000;
+  color: #fff;
+  font-weight: 800;
+}
+
+.secondary {
+  background: #e8e8e8;
+  color: #111;
+  font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .events-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-title-area {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .title-icons {
+    align-self: flex-end;
   }
 }

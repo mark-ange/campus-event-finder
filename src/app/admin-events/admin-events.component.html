@@ -1,209 +1,283 @@
-<!-- Admin Events Management Page -->
-<div class="admin-container">
-  <!-- Header -->
-  <header class="admin-header">
-    <div class="header-content">
-      <h1>Event Management</h1>
-      <p>Manage campus events and activities</p>
+<div class="admin-page">
+  <header class="admin-top">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn-secondary" (click)="goBack()">&larr; Back to Dashboard</button>
+
+    <div class="top-icons">
+      <button type="button" (click)="toggleMenu()" aria-label="Menu">
+        <span aria-hidden="true">&#9776;</span>
+      </button>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="admin-main">
-    <!-- Event Form -->
-    <section class="form-section">
-      <div class="form-header">
-        <h2>{{ isEditing ? 'Edit Event' : 'Create New Event' }}</h2>
-        <p>Fill in the details below to {{ isEditing ? 'update' : 'create' }} an event</p>
-      </div>
-      
-      <form (ngSubmit)="onSubmit()" class="event-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="title">Event Title *</label>
-            <input 
-              type="text" 
-              id="title" 
-              [(ngModel)]="formData.title" 
-              name="title"
-              required
-              class="form-input"
-              placeholder="Enter event title"
-            />
+  <nav class="admin-menu" *ngIf="menuOpen" aria-label="Admin menu">
+    <button type="button" (click)="goHome()">Home</button>
+    <button type="button" (click)="openCreate()">Create event</button>
+    <button type="button" (click)="openMessages()">Messages</button>
+    <button type="button" (click)="openNotifications()">Notifications</button>
+    <button type="button" (click)="openSettings()">Settings</button>
+  </nav>
+
+  <section class="admin-title-area" aria-label="Admin header">
+    <div class="title-left">
+      <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
+      <h2>{{ currentUser?.department || 'I.T Department' }}</h2>
+    </div>
+
+    <div class="title-icons" aria-label="Quick actions">
+      <button type="button" (click)="goHome()" aria-label="Home">
+        <span aria-hidden="true">&#8962;</span>
+      </button>
+      <button type="button" (click)="openCreate()" aria-label="Create event">
+        <span aria-hidden="true">+</span>
+      </button>
+      <button type="button" (click)="openMessages()" aria-label="Messages">
+        <span aria-hidden="true">&#128172;</span>
+      </button>
+      <button type="button" (click)="openNotifications()" aria-label="Notifications">
+        <span aria-hidden="true">&#128276;</span>
+      </button>
+      <button type="button" (click)="openSettings()" aria-label="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+    </div>
+  </section>
+
+  <main>
+    <h3 class="events-heading">Your Events</h3>
+
+    <section class="events-row" aria-label="Your events">
+      <article *ngFor="let event of pagedEvents" class="event-card">
+        <div class="event-head">
+          <img
+            class="event-image"
+            [src]="event.image || fallbackEventImage"
+            [alt]="event.title"
+            (error)="onImageError($event)"
+          />
+          <div class="event-meta">
+            <p>Department: {{ event.organizer || (currentUser?.department ?? '') }}</p>
+            <p>Date: {{ event.date }}</p>
+            <p>Time: {{ event.time }}</p>
+            <p>Location: {{ event.location }}</p>
+          </div>
+        </div>
+
+        <div class="event-body">
+          <div class="title-row">
+            <h4>{{ event.title }}</h4>
+
+            <div class="likes" aria-label="Event metrics">
+              <button type="button" class="like-btn" (click)="likeEvent(event)" aria-label="Like event">
+                <span aria-hidden="true">&#10084;</span>
+              </button>
+              <span class="metric-value">{{ formatCount(getLikes(event.id)) }}</span>
+              <button type="button" class="share-btn" (click)="shareEvent(event)" aria-label="Share event">
+                <span aria-hidden="true">&#8618;</span>
+              </button>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="category">Category *</label>
-            <select 
-              id="category" 
-              [(ngModel)]="formData.category" 
-              name="category"
-              required
-              class="form-select"
-            >
-              <option *ngFor="let category of categories" [value]="category">
-                {{ category }}
-              </option>
+          <p class="description">
+            <strong>Short Description:</strong>
+            {{ event.summary || event.description }}
+          </p>
+
+          <div class="footer-row">
+            <button type="button" class="comments" (click)="openComments(event)" aria-label="View comments">
+              <span class="comments-label">
+                <span aria-hidden="true">&#128172;</span>
+                <span>comments</span>
+              </span>
+              <span class="comments-count">{{ formatCount(getComments(event.id)) }}</span>
+            </button>
+
+            <div class="admin-actions">
+              <span
+                class="status"
+                [class.draft]="getEventStatus(event) === 'draft'"
+                [class.inactive]="getEventStatus(event) === 'inactive'"
+              >
+                {{ getStatusLabel(event) }}
+              </span>
+
+              <button type="button" class="danger" (click)="deleteEvent(event.id)" aria-label="Delete event">
+                <span aria-hidden="true">&#128465;</span>
+                <span class="action-text">Delete<br />Event</span>
+              </button>
+
+              <button type="button" class="edit" (click)="startEdit(event)" aria-label="Edit event">
+                <span aria-hidden="true">&#9998;</span>
+                <span class="action-text">Edit Event</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="empty-state" *ngIf="pagedEvents.length === 0">
+      No events yet. Click the + icon to create one.
+    </div>
+
+    <div class="pager" *ngIf="totalPages > 1" aria-label="Pagination">
+      <button type="button" (click)="prevPage()" [disabled]="pageIndex === 1" aria-label="Previous page">
+        &lt;
+      </button>
+      <span>{{ pageIndex }}/{{ totalPages }}</span>
+      <button
+        type="button"
+        (click)="nextPage()"
+        [disabled]="pageIndex === totalPages"
+        aria-label="Next page"
+      >
+        &gt;
+      </button>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" *ngIf="editorOpen" (click)="closeEditor()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">{{ isEditing ? 'Edit Event' : 'Create Event' }}</h3>
+
+      <form (ngSubmit)="submitEditor()" class="editor-form">
+        <label class="field">
+          <span class="label">Event title</span>
+          <input class="input" [(ngModel)]="formData.title" name="title" required />
+        </label>
+
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Department</span>
+            <input class="input" [(ngModel)]="formData.organizer" name="organizer" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Category</span>
+            <select class="select" [(ngModel)]="formData.category" name="category" required>
+              <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
             </select>
-          </div>
+          </label>
+        </div>
 
-          <div class="form-group">
-            <label for="date">Date *</label>
-            <input 
-              type="text" 
-              id="date" 
-              [(ngModel)]="formData.date" 
-              name="date"
-              required
-              class="form-input"
-              placeholder="e.g., March 18-19, 2026"
-            />
-          </div>
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Date</span>
+            <input class="input" [(ngModel)]="formData.date" name="date" required />
+          </label>
 
-          <div class="form-group">
-            <label for="time">Time *</label>
-            <input 
-              type="text" 
-              id="time" 
-              [(ngModel)]="formData.time" 
-              name="time"
-              required
-              class="form-input"
-              placeholder="e.g., 9:00 AM - 9:00 PM"
-            />
-          </div>
+          <label class="field">
+            <span class="label">Time</span>
+            <input class="input" [(ngModel)]="formData.time" name="time" required />
+          </label>
+        </div>
 
-          <div class="form-group">
-            <label for="location">Location *</label>
-            <input 
-              type="text" 
-              id="location" 
-              [(ngModel)]="formData.location" 
-              name="location"
-              required
-              class="form-input"
-              placeholder="Event venue"
-            />
-          </div>
+        <label class="field">
+          <span class="label">Location</span>
+          <input class="input" [(ngModel)]="formData.location" name="location" required />
+        </label>
 
-          <div class="form-group">
-            <label for="organizer">Organizer *</label>
-            <input 
-              type="text" 
-              id="organizer" 
-              [(ngModel)]="formData.organizer" 
-              name="organizer"
-              required
-              class="form-input"
-              placeholder="Organizing department or club"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="capacity">Capacity *</label>
-            <input 
-              type="number" 
-              id="capacity" 
-              [(ngModel)]="formData.capacity" 
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Capacity</span>
+            <input
+              class="input"
+              type="number"
+              min="1"
+              [(ngModel)]="formData.capacity"
               name="capacity"
               required
-              min="1"
-              class="form-input"
-              placeholder="Maximum attendees"
             />
-          </div>
+          </label>
 
-          <div class="form-group">
-            <label for="image">Image URL</label>
-            <input 
-              type="url" 
-              id="image" 
-              [(ngModel)]="formData.image" 
-              name="image"
-              class="form-input"
-              placeholder="https://example.com/event-image.jpg"
-            />
-          </div>
+          <label class="field">
+            <span class="label">Status</span>
+            <select class="select" [(ngModel)]="formData.status" name="status" required>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="draft">Draft</option>
+            </select>
+          </label>
         </div>
 
-        <div class="form-group">
-          <label for="summary">Summary *</label>
-          <textarea 
-            id="summary" 
-            [(ngModel)]="formData.summary" 
+        <label class="field">
+          <span class="label">Image URL</span>
+          <input class="input" [(ngModel)]="formData.image" name="image" />
+        </label>
+
+        <label class="field">
+          <span class="label">Short description</span>
+          <textarea
+            class="textarea"
+            rows="3"
+            [(ngModel)]="formData.summary"
             name="summary"
             required
-            class="form-textarea"
-            rows="3"
-            placeholder="Brief description of the event (1-2 sentences)"
           ></textarea>
-        </div>
+        </label>
 
-        <div class="form-group">
-          <label for="description">Description *</label>
-          <textarea 
-            id="description" 
-            [(ngModel)]="formData.description" 
+        <label class="field">
+          <span class="label">Full description</span>
+          <textarea
+            class="textarea"
+            rows="6"
+            [(ngModel)]="formData.description"
             name="description"
             required
-            class="form-textarea"
-            rows="6"
-            placeholder="Detailed description of the event"
           ></textarea>
-        </div>
+        </label>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">
+        <div class="editor-actions">
+          <button type="submit" class="primary">
             {{ isEditing ? 'Update Event' : 'Create Event' }}
           </button>
-          <button type="button" (click)="cancelEdit()" class="btn-outline">
-            Cancel
-          </button>
+          <button type="button" class="secondary" (click)="closeEditor()">Cancel</button>
         </div>
       </form>
-    </section>
+    </div>
+  </div>
 
-    <!-- Events List -->
-    <section class="events-section">
-      <div class="section-header">
-        <h2>Existing Events</h2>
-        <p>Manage and edit existing events</p>
-      </div>
+  <div class="modal-backdrop" *ngIf="commentsOpen" (click)="closeComments()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Comments</h3>
+      <p class="modal-subtitle" *ngIf="commentsEvent">{{ commentsEvent.title }}</p>
 
-      <div class="events-list">
-        <div *ngFor="let event of events" class="event-item">
-          <div class="event-item-image">
-            <img [src]="event.image" [alt]="event.title" />
+      <div class="comments-list" *ngIf="commentsEvent">
+        <div class="comment" *ngFor="let comment of eventComments">
+          <div class="comment-head">
+            <span class="comment-author">{{ comment.author }}</span>
+            <span class="comment-role">{{ comment.role }}</span>
+            <span class="comment-time">{{ comment.createdAt | date: 'short' }}</span>
+            <button type="button" class="comment-delete" (click)="deleteComment(comment.id)">Delete</button>
           </div>
-          <div class="event-item-content">
-            <div class="event-item-header">
-              <h3>{{ event.title }}</h3>
-              <span class="event-category">{{ event.category }}</span>
-            </div>
-            <div class="event-item-meta">
-              <span class="event-date">{{ event.date }} - {{ event.time }}</span>
-              <span class="event-location">{{ event.location }}</span>
-              <span class="event-organizer">{{ event.organizer }}</span>
-            </div>
-            <p class="event-summary">{{ event.summary }}</p>
-            <div class="event-stats">
-              <span class="stat-item">Capacity: {{ event.capacity }}</span>
-              <span class="stat-item">Registrations: {{ event.registrations }}</span>
-            </div>
-          </div>
-          <div class="event-item-actions">
-            <button class="btn-sm btn-outline" (click)="editEvent(event)">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-sm btn-danger" (click)="deleteEvent(event.id)">
-              <i class="fas fa-trash"></i> Delete
-            </button>
-          </div>
+          <p class="comment-text">{{ comment.text }}</p>
         </div>
+
+        <p class="no-comments" *ngIf="eventComments.length === 0">
+          No comments yet.
+        </p>
       </div>
-    </section>
-  </main>
+
+      <form class="comment-form" (ngSubmit)="submitComment()" *ngIf="commentsEvent">
+        <textarea
+          class="comment-input"
+          name="commentText"
+          [(ngModel)]="commentText"
+          rows="2"
+          maxlength="280"
+          placeholder="Write a comment..."
+          required
+        ></textarea>
+        <div class="editor-actions">
+          <button type="submit" class="primary" [disabled]="!commentText.trim()">Post</button>
+          <button type="button" class="secondary" (click)="closeComments()">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
