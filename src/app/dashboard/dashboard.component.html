@@ -19,7 +19,7 @@
     <button type="button" (click)="navigateTo('/dashboard')">Home</button>
     <button
       type="button"
-      *ngIf="currentUser?.role === 'admin'"
+      *ngIf="currentUser?.role === 'admin' || currentUser?.role === 'main-admin'"
       (click)="navigateTo('/admin-events')"
     >
       Admin Events
@@ -41,7 +41,7 @@
   <main class="hub-main">
     <h1 class="section-title">Feature events</h1>
 
-    <section class="featured-grid" aria-label="Featured events">
+    <section class="featured-grid" aria-label="Featured events" *ngIf="featuredEvents.length > 0; else noFeaturedEvents">
       <article
         class="featured-card"
         *ngFor="let event of featuredEvents; trackBy: trackByEventId"
@@ -58,14 +58,22 @@
         <div class="featured-content">
           <h2>{{ event.title }}</h2>
           <p>{{ event.date }}</p>
-          <button type="button" (click)="openDetails(event); $event.stopPropagation()">view details</button>
+          <button type="button" (click)="openDetails(event); $event.stopPropagation()">
+            view details
+          </button>
         </div>
       </article>
     </section>
 
+    <ng-template #noFeaturedEvents>
+      <div class="empty-panel empty-panel--compact">
+        No featured events available right now.
+      </div>
+    </ng-template>
+
     <h1 class="section-title">Events</h1>
 
-    <section class="events-grid" aria-label="All events">
+    <section class="events-grid" aria-label="All events" *ngIf="events.length > 0; else noDepartmentEvents">
       <article
         class="event-card"
         *ngFor="let event of events; trackBy: trackByEventId"
@@ -89,7 +97,9 @@
 
           <div class="event-meta">
             <div class="meta-row"><span class="meta-label">Date:</span> <span>{{ event.date }}</span></div>
-            <div class="meta-row"><span class="meta-label">Location:</span> <span>{{ event.location }}</span></div>
+            <div class="meta-row">
+              <span class="meta-label">Location:</span> <span>{{ event.location }}</span>
+            </div>
           </div>
 
           <p class="event-desc"><span class="meta-label">Description:</span> {{ event.description }}</p>
@@ -134,6 +144,13 @@
         </div>
       </article>
     </section>
+
+    <ng-template #noDepartmentEvents>
+      <div class="empty-panel">
+        <h2>No active events available right now.</h2>
+        <p>Check back later or ask an admin to publish a department event.</p>
+      </div>
+    </ng-template>
   </main>
 
   <div class="details-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
@@ -155,7 +172,9 @@
       <p><strong>About:</strong> {{ selectedEvent.description }}</p>
 
       <div class="details-actions">
-        <button type="button" class="details-register" (click)="registerForEvent(selectedEvent)">Register</button>
+        <button type="button" class="details-register" (click)="registerForEvent(selectedEvent)">
+          Register
+        </button>
         <button type="button" class="details-share" (click)="shareEvent(selectedEvent)">Share</button>
       </div>
 

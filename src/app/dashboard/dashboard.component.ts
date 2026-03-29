@@ -4,7 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
 import { EventComment, EventEngagementService } from '../services/event-engagement.service';
-import { DEFAULT_EVENTS, EVENTS_STORAGE_KEY, HubEvent, mergeEvents, sortEventsForDisplay } from '../services/event-store';
+import {
+  DEFAULT_EVENTS,
+  EVENTS_STORAGE_KEY,
+  HubEvent,
+  mergeEvents,
+  sortEventsForDisplay
+} from '../services/event-store';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,6 +32,7 @@ export class DashboardComponent implements OnInit {
   selectedEvent: HubEvent | null = null;
   currentUser: User | null = null;
 
+  private eventCatalog: HubEvent[] = [];
   allEvents: HubEvent[] = [];
   events: HubEvent[] = [];
   featuredEvents: HubEvent[] = [];
@@ -40,19 +47,21 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadEvents(): void {
+    let storedEvents: HubEvent[] = [];
     const savedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
     if (savedEvents) {
       try {
         const parsed = JSON.parse(savedEvents) as unknown;
         if (Array.isArray(parsed)) {
-          this.events = parsed as HubEvent[];
+          storedEvents = parsed as HubEvent[];
         }
       } catch {
       }
     }
 
-    const merged = mergeEvents(this.events.length ? this.events : [], DEFAULT_EVENTS);
-    this.allEvents = sortEventsForDisplay(merged.events);
+    const merged = mergeEvents(storedEvents.length ? storedEvents : [], DEFAULT_EVENTS);
+    this.eventCatalog = merged.events;
+    this.allEvents = sortEventsForDisplay(this.eventCatalog);
     this.events = this.allEvents.filter(event => (event.status ?? 'active') === 'active');
 
     if (!savedEvents || merged.changed) {
@@ -61,7 +70,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private saveEvents(): void {
-    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(this.allEvents));
+    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(this.eventCatalog));
   }
 
   toggleMenu(): void {

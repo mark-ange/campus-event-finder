@@ -28,7 +28,10 @@
 
     <div class="row">
       <label class="label">Your Department:</label>
-      <input class="input" formControlName="department" placeholder="Enter Your Department" />
+      <select class="input" formControlName="department">
+        <option value="" disabled>Select your department</option>
+        <option *ngFor="let department of departments" [value]="department">{{ department }}</option>
+      </select>
     </div>
 
     <div class="row">

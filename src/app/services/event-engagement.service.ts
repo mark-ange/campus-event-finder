@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
+import { UserRole } from './department-directory';
 
 export interface EventComment {
   id: string;
   author: string;
-  role: 'student' | 'admin';
+  role: UserRole;
   text: string;
   createdAt: number;
 }
@@ -51,7 +52,7 @@ export class EventEngagementService {
 
   addComment(
     eventId: string,
-    input: { author: string; role: 'student' | 'admin'; text: string }
+    input: { author: string; role: UserRole; text: string }
   ): EventComment | null {
     const text = input.text.trim();
     if (!text) return null;

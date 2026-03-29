@@ -181,6 +181,32 @@
   padding: 0 14px;
 }
 
+.empty-panel {
+  margin: 0 14px;
+  border-radius: 28px;
+  padding: 18px 20px;
+  background: #f1e7d5;
+  border: 2px dashed #8f6b2b;
+  color: #4b2200;
+  font-family: Arial, sans-serif;
+}
+
+.empty-panel--compact {
+  margin-bottom: 6px;
+}
+
+.empty-panel h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-family: Rockwell, 'Roboto Slab', serif;
+}
+
+.empty-panel p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .event-card {
   background: #d0d0d0;
   border-radius: 34px;

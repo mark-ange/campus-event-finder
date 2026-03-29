@@ -1,3 +1,5 @@
+import { isKnownDepartment, normalizeDepartment, sameDepartment } from './department-directory';
+
 export interface HubEvent {
   id: string;
   title: string;
@@ -9,6 +11,7 @@ export interface HubEvent {
   summary: string;
   location: string;
   organizer: string;
+  department: string;
   capacity: number;
   registrations: number;
   status?: EventStatus;
@@ -31,6 +34,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Join us for an intense 24-hour coding challenge!',
     location: 'Computer Science Building',
     organizer: 'Computer Science Department',
+    department: 'Computer Science Department',
     capacity: 100,
     registrations: 45,
     status: 'active'
@@ -47,6 +51,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Test your engineering skills in this hands-on competition!',
     location: 'Engineering Multi-Purpose Hall',
     organizer: 'Engineering Society',
+    department: 'Engineering Department',
     capacity: 50,
     registrations: 30,
     status: 'active'
@@ -63,9 +68,28 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Gain life-saving skills in this hands-on workshop.',
     location: 'Medical Training Center',
     organizer: 'Pre-Med Society',
+    department: 'Healthcare Department',
     capacity: 30,
     registrations: 25,
     status: 'inactive'
+  },
+  {
+    id: 'ev-13',
+    title: 'Healthcare Skills Expo 2026',
+    date: 'April 17, 2026',
+    time: '1:00 PM - 4:30 PM',
+    image:
+      'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
+    category: 'Healthcare',
+    description:
+      'An active showcase of basic clinical skills, wellness booths, and student-led demonstrations for healthcare majors.',
+    summary: 'Hands-on demos and wellness stations for healthcare students.',
+    location: 'Nursing Skills Laboratory',
+    organizer: 'Healthcare Department',
+    department: 'Healthcare Department',
+    capacity: 80,
+    registrations: 34,
+    status: 'active'
   },
   {
     id: 'ev-4',
@@ -80,6 +104,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Boost your digital skills for the modern classroom.',
     location: 'Rodelsa Hall, Room 204',
     organizer: 'Academic Affairs Office',
+    department: 'Information Technology Department',
     capacity: 120,
     registrations: 62,
     status: 'active'
@@ -97,6 +122,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'An evening of pitches, demos, and networking.',
     location: 'Innovation Lab, 3rd Floor',
     organizer: 'Entrepreneurship Club',
+    department: 'Business Department',
     capacity: 180,
     registrations: 98,
     status: 'active'
@@ -114,6 +140,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'A practical bootcamp for beginners.',
     location: 'IT Innovation Lab, 2nd Floor',
     organizer: 'IT Department',
+    department: 'Information Technology Department',
     capacity: 60,
     registrations: 44,
     status: 'active'
@@ -131,6 +158,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Departments unite for the opening of intramurals.',
     location: 'University Gymnasium',
     organizer: 'Sports Development Office',
+    department: 'Sports Department',
     capacity: 800,
     registrations: 540,
     status: 'active'
@@ -148,6 +176,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Showcasing student research and innovation.',
     location: 'Rodelsa Hall Auditorium',
     organizer: 'Research Office',
+    department: 'Computer Science Department',
     capacity: 300,
     registrations: 210,
     status: 'active'
@@ -165,6 +194,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Recruiters, interviews, and internships in one place.',
     location: 'Main Quadrangle',
     organizer: 'Career Services Office',
+    department: 'Business Department',
     capacity: 1000,
     registrations: 680,
     status: 'active'
@@ -182,6 +212,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'A gallery night celebrating student artists.',
     location: 'Arts Center Lobby',
     organizer: 'Fine Arts Department',
+    department: 'Fine Arts Department',
     capacity: 250,
     registrations: 190,
     status: 'active'
@@ -199,6 +230,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Start your Liceo journey with a full-day welcome program.',
     location: 'University Grounds',
     organizer: 'Student Affairs Office',
+    department: 'Student Affairs Department',
     capacity: 1500,
     registrations: 1200,
     status: 'active'
@@ -216,6 +248,7 @@ export const DEFAULT_EVENTS: HubEvent[] = [
     summary: 'Volunteer and make a difference in the community.',
     location: 'Community Extension Office',
     organizer: 'Community Extension Office',
+    department: 'Student Affairs Department',
     capacity: 200,
     registrations: 160,
     status: 'active'
@@ -233,10 +266,19 @@ export function mergeEvents(
     const stored = byId.get(event.id);
 
     if (!stored) {
-      existing.push(event);
+      existing.push({ ...event });
       byId.set(event.id, event);
       changed = true;
       continue;
+    }
+
+    const normalizedStoredDepartment = normalizeEventDepartment(stored);
+    if (!normalizedStoredDepartment) {
+      stored.department = event.department;
+      changed = true;
+    } else if (stored.department !== normalizedStoredDepartment) {
+      stored.department = normalizedStoredDepartment;
+      changed = true;
     }
 
     const storedImage = typeof stored.image === 'string' ? stored.image.trim() : '';
@@ -253,6 +295,76 @@ export function mergeEvents(
   }
 
   return { events: existing, changed };
+}
+
+export function normalizeEventDepartment(
+  event: Pick<HubEvent, 'department' | 'organizer' | 'title' | 'category' | 'description'>
+): string {
+  return (
+    normalizeDepartment(event.department) ||
+    inferDepartmentFromText(event.organizer) ||
+    inferDepartmentFromText(event.title) ||
+    inferDepartmentFromText(event.category) ||
+    inferDepartmentFromText(event.description)
+  );
+}
+
+export function scopeEventsToDepartment(events: HubEvent[], department: string): HubEvent[] {
+  return events.filter(event => sameDepartment(normalizeEventDepartment(event), department));
+}
+
+function inferDepartmentFromText(value: string | null | undefined): string {
+  const normalized = normalizeDepartment(value);
+  if (isKnownDepartment(normalized)) {
+    return normalized;
+  }
+
+  const text = (value ?? '').toLowerCase();
+  if (!text) return '';
+
+  if (text.includes('engineer') || text.includes('bridge')) return 'Engineering Department';
+  if (text.includes('health') || text.includes('medical') || text.includes('cpr')) {
+    return 'Healthcare Department';
+  }
+  if (
+    text.includes('computer science') ||
+    text.includes('research') ||
+    text.includes('hack') ||
+    text.includes('code')
+  ) {
+    return 'Computer Science Department';
+  }
+  if (
+    text.includes('information technology') ||
+    /\bit\b/.test(text) ||
+    text.includes('digital') ||
+    text.includes('data')
+  ) {
+    return 'Information Technology Department';
+  }
+  if (
+    text.includes('business') ||
+    text.includes('career') ||
+    text.includes('startup') ||
+    text.includes('entrepreneur')
+  ) {
+    return 'Business Department';
+  }
+  if (text.includes('sports') || text.includes('intramural') || text.includes('gym')) {
+    return 'Sports Department';
+  }
+  if (text.includes('arts') || text.includes('gallery') || text.includes('painting')) {
+    return 'Fine Arts Department';
+  }
+  if (
+    text.includes('student affairs') ||
+    text.includes('orientation') ||
+    text.includes('community')
+  ) {
+    return 'Student Affairs Department';
+  }
+
+  return '';
 }
 
 export function parseEventStartDate(dateText: string): number | null {

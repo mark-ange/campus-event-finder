@@ -24,16 +24,14 @@ export class SettingsComponent implements OnInit {
   readonly backgroundImage = 'assets/background log-in.png';
 
   readonly settingsForm = this.formBuilder.group({
-    fullName: ['', [Validators.required]],
-    department: ['', [Validators.required]]
+    fullName: ['', [Validators.required]]
   });
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     if (this.currentUser) {
       this.settingsForm.patchValue({
-        fullName: this.currentUser.fullName,
-        department: this.currentUser.department
+        fullName: this.currentUser.fullName
       });
     }
   }
@@ -57,8 +55,7 @@ export class SettingsComponent implements OnInit {
     }
 
     const fullName = this.settingsForm.value.fullName ?? '';
-    const department = this.settingsForm.value.department ?? '';
-    this.authService.updateProfile({ fullName, department });
+    this.authService.updateProfile({ fullName });
     this.currentUser = this.authService.getCurrentUser();
     this.savedMessage = 'Settings saved.';
   }

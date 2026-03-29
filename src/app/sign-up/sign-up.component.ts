@@ -3,6 +3,7 @@ import { NgIf } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, RegisterData } from '../services/auth.service';
+import { DEPARTMENT_OPTIONS } from '../services/department-directory';
 
 @Component({
   selector: 'app-sign-up',
@@ -27,6 +28,7 @@ export class SignUpComponent {
 
   errorMessage = '';
   successMessage = '';
+  readonly departments = DEPARTMENT_OPTIONS;
 
   onSubmit(): void {
     if (this.registerForm.valid) {

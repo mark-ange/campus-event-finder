@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import {
+  DEMO_DEPARTMENT_ACCOUNTS,
+  isKnownDepartment,
+  normalizeDepartment,
+  sameDepartment,
+  UserRole
+} from './department-directory';
 
 export interface User {
   id: string;
@@ -7,7 +14,7 @@ export interface User {
   email: string;
   password: string;
   department: string;
-  role: 'student' | 'admin';
+  role: UserRole;
   profileImage?: string;
   createdAt: Date;
 }
@@ -29,6 +36,8 @@ export interface RegisterData {
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly usersStorageKey = 'users';
+  private readonly currentUserStorageKey = 'currentUser';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -41,24 +50,51 @@ export class AuthService {
   }
 
   private loadUsers(): void {
-    const storedUsers = localStorage.getItem('users');
+    const storedUsers = localStorage.getItem(this.usersStorageKey);
     if (storedUsers) {
-      this.users = JSON.parse(storedUsers);
+      try {
+        const parsed = JSON.parse(storedUsers) as unknown;
+        if (Array.isArray(parsed)) {
+          this.users = parsed
+            .filter(user => user && typeof user === 'object')
+            .map(user => this.normalizeUser(user as User));
+        }
+      } catch {
+        this.users = [];
+      }
+    }
+
+    const merged = this.mergeDemoUsers(this.users);
+    this.users = merged.users;
+    if (merged.changed) {
+      this.saveUsers();
     }
   }
 
   private loadCurrentUser(): void {
-    const storedCurrentUser = localStorage.getItem('currentUser');
-    if (storedCurrentUser) {
-      this.currentUserSubject.next(JSON.parse(storedCurrentUser));
+    const storedCurrentUser = localStorage.getItem(this.currentUserStorageKey);
+    if (!storedCurrentUser) return;
+
+    try {
+      const parsed = this.normalizeUser(JSON.parse(storedCurrentUser) as User);
+      const latest = this.users.find(user => user.email === parsed.email) ?? parsed;
+      this.currentUserSubject.next(latest);
+      localStorage.setItem(this.currentUserStorageKey, JSON.stringify(latest));
+    } catch {
+      this.currentUserSubject.next(null);
+      localStorage.removeItem(this.currentUserStorageKey);
     }
   }
 
   private saveUsers(): void {
-    localStorage.setItem('users', JSON.stringify(this.users));
+    localStorage.setItem(this.usersStorageKey, JSON.stringify(this.users));
   }
 
   register(data: RegisterData): { success: boolean; message: string } {
+    const department = normalizeDepartment(data.department);
+    if (!isKnownDepartment(department)) {
+      return { success: false, message: 'Please choose a valid department' };
+    }
 
     const existingUser = this.users.find(u => u.email === data.email);
 
@@ -70,7 +106,7 @@ export class AuthService {
       return { success: false, message: 'Use your official @liceo.edu.ph email' };
     }
 
-    let role: 'student' | 'admin' = 'student';
+    let role: UserRole = 'student';
 
     if (data.adminCode === 'ADMIN123') {
       role = 'admin';
@@ -85,8 +121,8 @@ export class AuthService {
       fullName: data.fullName,
       email: data.email,
       password: data.password,
-      department: data.department || 'Unknown',
-      role: role,
+      department,
+      role,
       createdAt: new Date()
     };
 
@@ -97,9 +133,9 @@ export class AuthService {
   }
 
   login(credentials: LoginCredentials): { success: boolean; message: string } {
-
     const user = this.users.find(
-      u => u.email === credentials.email && u.password === credentials.password
+      candidate =>
+        candidate.email === credentials.email && candidate.password === credentials.password
     );
 
     if (!user) {
@@ -107,7 +143,7 @@ export class AuthService {
     }
 
     this.currentUserSubject.next(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem(this.currentUserStorageKey, JSON.stringify(user));
 
     return { success: true, message: 'Login successful' };
   }
@@ -116,28 +152,9 @@ export class AuthService {
     return this.users.some(user => user.email === email);
   }
 
-  resetPassword(email: string, newPassword: string): { success: boolean; message: string } {
-    const user = this.users.find(existing => existing.email === email);
-    if (!user) {
-      return { success: false, message: 'No account found for this email' };
-    }
-
-    user.password = newPassword;
-    this.saveUsers();
-
-    const current = this.currentUserSubject.value;
-    if (current?.email === email) {
-      const updatedUser = { ...current, password: newPassword };
-      this.currentUserSubject.next(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
-
-    return { success: true, message: 'Password updated' };
-  }
-
   logout(): void {
     this.currentUserSubject.next(null);
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem(this.currentUserStorageKey);
   }
 
   isLoggedIn(): boolean {
@@ -150,16 +167,34 @@ export class AuthService {
 
   isAdmin(): boolean {
     const user = this.currentUserSubject.value;
-    return user?.role === 'admin';
+    return user?.role === 'admin' || user?.role === 'main-admin';
+  }
+
+  isMainAdmin(): boolean {
+    return this.currentUserSubject.value?.role === 'main-admin';
+  }
+
+  isSameDepartment(otherDepartment: string | null | undefined): boolean {
+    return sameDepartment(this.currentUserSubject.value?.department, otherDepartment);
+  }
+
+  canManageDepartment(otherDepartment: string | null | undefined): boolean {
+    const currentUser = this.currentUserSubject.value;
+    if (!currentUser) return false;
+    if (currentUser.role === 'main-admin') return true;
+    return currentUser.role === 'admin' && sameDepartment(currentUser.department, otherDepartment);
   }
 
   updateProfile(data: Partial<User>): void {
-
     const currentUser = this.currentUserSubject.value;
 
     if (!currentUser) return;
 
-    const updatedUser = { ...currentUser, ...data };
+    const updatedUser: User = {
+      ...currentUser,
+      ...data,
+      department: currentUser.department
+    };
 
     this.currentUserSubject.next(updatedUser);
 
@@ -170,11 +205,40 @@ export class AuthService {
     }
 
     this.saveUsers();
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    localStorage.setItem(this.currentUserStorageKey, JSON.stringify(updatedUser));
   }
 
   private generateId(): string {
     return 'user_' + Math.random().toString(36).substring(2, 9);
   }
 
+  private normalizeUser(user: User): User {
+    return {
+      ...user,
+      department: normalizeDepartment(user.department) || user.department || 'Unknown'
+    };
+  }
+
+  private mergeDemoUsers(existingUsers: User[]): { users: User[]; changed: boolean } {
+    const users = existingUsers.slice();
+    let changed = false;
+
+    for (const demo of DEMO_DEPARTMENT_ACCOUNTS) {
+      const existing = users.find(user => user.email === demo.email);
+      if (existing) continue;
+
+      users.push({
+        id: this.generateId(),
+        fullName: demo.fullName,
+        email: demo.email,
+        password: demo.password,
+        department: demo.department,
+        role: demo.role,
+        createdAt: new Date()
+      });
+      changed = true;
+    }
+
+    return { users, changed };
+  }
 }

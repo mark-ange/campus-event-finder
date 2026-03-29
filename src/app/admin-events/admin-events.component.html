@@ -26,7 +26,7 @@
   <section class="admin-title-area" aria-label="Admin header">
     <div class="title-left">
       <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
-      <h2>{{ currentUser?.department || 'I.T Department' }}</h2>
+      <h2>{{ currentUser?.department || 'Department' }}</h2>
     </div>
 
     <div class="title-icons" aria-label="Quick actions">
@@ -49,7 +49,7 @@
   </section>
 
   <main>
-    <h3 class="events-heading">Your Events</h3>
+    <h3 class="events-heading">{{ eventsHeading }}</h3>
 
     <section class="events-row" aria-label="Your events">
       <article *ngFor="let event of pagedEvents; trackBy: trackByEventId" class="event-card">
@@ -61,7 +61,8 @@
             (error)="onImageError($event)"
           />
           <div class="event-meta">
-            <p>Department: {{ event.organizer || (currentUser?.department ?? '') }}</p>
+            <p>Department: {{ event.department }}</p>
+            <p>Organizer: {{ event.organizer }}</p>
             <p>Date: {{ event.date }}</p>
             <p>Time: {{ event.time }}</p>
             <p>Location: {{ event.location }}</p>
@@ -131,7 +132,7 @@
     </section>
 
     <div class="empty-state" *ngIf="pagedEvents.length === 0">
-      No events yet. Click the + icon to create one.
+      No events available to manage yet. Click the + icon to create one.
     </div>
 
     <div class="pager" *ngIf="totalPages > 1" aria-label="Pagination">
@@ -163,7 +164,14 @@
         <div class="two-col">
           <label class="field">
             <span class="label">Department</span>
-            <input class="input" [(ngModel)]="formData.organizer" name="organizer" required />
+            <select
+              class="select"
+              [(ngModel)]="formData.department"
+              name="department"
+              [disabled]="!canChooseDepartment"
+            >
+              <option *ngFor="let department of departmentOptions" [value]="department">{{ department }}</option>
+            </select>
           </label>
 
           <label class="field">
@@ -173,6 +181,11 @@
             </select>
           </label>
         </div>
+
+        <label class="field">
+          <span class="label">Organizer</span>
+          <input class="input" [(ngModel)]="formData.organizer" name="organizer" required />
+        </label>
 
         <div class="two-col">
           <label class="field">

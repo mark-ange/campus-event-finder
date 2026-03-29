@@ -26,7 +26,7 @@
 
       <label class="field">
         <span class="label">Department</span>
-        <input class="input" formControlName="department" />
+        <input class="input" [value]="currentUser?.department || ''" readonly />
       </label>
 
       <button type="submit" class="save-btn" [disabled]="settingsForm.invalid">Save</button>
@@ -38,4 +38,3 @@
     <button type="button" class="logout-btn" (click)="logout()">Logout</button>
   </section>
 </div>
-

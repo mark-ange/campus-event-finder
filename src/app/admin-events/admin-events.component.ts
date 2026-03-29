@@ -3,8 +3,17 @@ import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
+import { DEPARTMENT_OPTIONS } from '../services/department-directory';
 import { EventComment, EventEngagementService } from '../services/event-engagement.service';
-import { DEFAULT_EVENTS, EVENTS_STORAGE_KEY, EventStatus, HubEvent, mergeEvents } from '../services/event-store';
+import {
+  DEFAULT_EVENTS,
+  EVENTS_STORAGE_KEY,
+  EventStatus,
+  HubEvent,
+  mergeEvents,
+  scopeEventsToDepartment,
+  sortEventsForDisplay
+} from '../services/event-store';
 
 interface EventFormData {
   title: string;
@@ -15,6 +24,7 @@ interface EventFormData {
   summary: string;
   location: string;
   organizer: string;
+  department: string;
   capacity: number;
   image: string;
   status: EventStatus;
@@ -44,13 +54,14 @@ export class AdminEventsComponent implements OnInit {
   pageIndex = 1;
   private readonly pageSize = 2;
 
+  private eventCatalog: HubEvent[] = [];
   events: HubEvent[] = [];
   isEditing = false;
   editingEventId: string | null = null;
   commentsEvent: HubEvent | null = null;
   commentText = '';
   eventComments: EventComment[] = [];
-  
+
   formData: EventFormData = {
     title: '',
     date: '',
@@ -60,15 +71,25 @@ export class AdminEventsComponent implements OnInit {
     summary: '',
     location: '',
     organizer: '',
+    department: '',
     capacity: 50,
     image: '',
     status: 'active'
   };
 
   categories = [
-    'Technology', 'Engineering', 'Healthcare', 'Business', 
-    'Arts', 'Sports', 'Academic', 'Social', 'Workshop', 'Seminar'
+    'Technology',
+    'Engineering',
+    'Healthcare',
+    'Business',
+    'Arts',
+    'Sports',
+    'Academic',
+    'Social',
+    'Workshop',
+    'Seminar'
   ];
+  readonly departmentOptions = DEPARTMENT_OPTIONS;
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -77,27 +98,37 @@ export class AdminEventsComponent implements OnInit {
   }
 
   private loadEvents(): void {
+    let storedEvents: HubEvent[] = [];
     const savedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
     if (savedEvents) {
       try {
         const parsed = JSON.parse(savedEvents) as unknown;
         if (Array.isArray(parsed)) {
-          this.events = parsed as HubEvent[];
+          storedEvents = parsed as HubEvent[];
         }
       } catch {
       }
     }
 
-    const merged = mergeEvents(this.events.length ? this.events : [], DEFAULT_EVENTS);
-    this.events = merged.events;
+    const merged = mergeEvents(storedEvents.length ? storedEvents : [], DEFAULT_EVENTS);
+    this.eventCatalog = merged.events;
+    this.refreshDepartmentEvents();
 
     if (!savedEvents || merged.changed) {
       this.saveEvents();
     }
   }
 
+  private refreshDepartmentEvents(): void {
+    const managedEvents = this.authService.isMainAdmin()
+      ? this.eventCatalog.slice()
+      : scopeEventsToDepartment(this.eventCatalog, this.currentUser?.department ?? '');
+    this.events = sortEventsForDisplay(managedEvents);
+    this.ensurePageInRange();
+  }
+
   private saveEvents(): void {
-    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(this.events));
+    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(this.eventCatalog));
   }
 
   toggleMenu(): void {
@@ -151,14 +182,13 @@ export class AdminEventsComponent implements OnInit {
     this.isEditing = false;
     this.editingEventId = null;
     this.resetForm();
-    if (this.currentUser?.department) {
-      this.formData.organizer = this.currentUser.department;
-    }
     this.menuOpen = false;
     this.editorOpen = true;
   }
 
   startEdit(event: HubEvent): void {
+    if (!this.authService.canManageDepartment(event.department)) return;
+
     this.commentsOpen = false;
     this.commentsEvent = null;
     this.isEditing = true;
@@ -172,6 +202,7 @@ export class AdminEventsComponent implements OnInit {
       summary: event.summary,
       location: event.location,
       organizer: event.organizer,
+      department: event.department,
       capacity: event.capacity,
       image: event.image,
       status: this.getEventStatus(event)
@@ -186,6 +217,8 @@ export class AdminEventsComponent implements OnInit {
   }
 
   submitEditor(): void {
+    if (!this.currentUser) return;
+
     if (this.isEditing) {
       this.updateEvent();
     } else {
@@ -196,6 +229,9 @@ export class AdminEventsComponent implements OnInit {
   }
 
   private addEvent(): void {
+    if (!this.currentUser) return;
+    const department = this.getManagedDepartment();
+
     const newEvent: HubEvent = {
       id: 'ev-' + Date.now(),
       title: this.formData.title,
@@ -206,21 +242,27 @@ export class AdminEventsComponent implements OnInit {
       summary: this.formData.summary,
       location: this.formData.location,
       organizer: this.formData.organizer,
+      department,
       capacity: this.formData.capacity,
       image: this.formData.image,
       status: this.formData.status,
       registrations: 0
     };
 
-    this.events.unshift(newEvent);
+    this.eventCatalog.unshift(newEvent);
     this.saveEvents();
-    this.ensurePageInRange();
+    this.refreshDepartmentEvents();
   }
 
   private updateEvent(): void {
-    const index = this.events.findIndex(e => e.id === this.editingEventId);
+    if (!this.currentUser) return;
+
+    const index = this.eventCatalog.findIndex(e => e.id === this.editingEventId);
     if (index !== -1) {
-      const existing = this.events[index];
+      const existing = this.eventCatalog[index];
+      if (!this.authService.canManageDepartment(existing.department)) return;
+      const department = this.getManagedDepartment(existing.department);
+
       const updatedEvent: HubEvent = {
         id: this.editingEventId!,
         title: this.formData.title,
@@ -231,26 +273,34 @@ export class AdminEventsComponent implements OnInit {
         summary: this.formData.summary,
         location: this.formData.location,
         organizer: this.formData.organizer,
+        department,
         capacity: this.formData.capacity,
         image: this.formData.image,
         status: this.formData.status,
         registrations: existing.registrations
       };
-      this.events[index] = updatedEvent;
+      this.eventCatalog[index] = updatedEvent;
       this.saveEvents();
-      this.ensurePageInRange();
+      this.refreshDepartmentEvents();
     }
   }
 
   deleteEvent(eventId: string): void {
+    const target = this.eventCatalog.find(event => event.id === eventId);
+    if (!target || !this.authService.canManageDepartment(target.department)) return;
+
     if (confirm('Are you sure you want to delete this event?')) {
-      this.events = this.events.filter(e => e.id !== eventId);
+      this.eventCatalog = this.eventCatalog.filter(event => event.id !== eventId);
       this.saveEvents();
-      this.ensurePageInRange();
+      this.refreshDepartmentEvents();
     }
   }
 
   private resetForm(): void {
+    const defaultDepartment = this.authService.isMainAdmin()
+      ? this.departmentOptions[0]
+      : this.currentUser?.department ?? '';
+
     this.isEditing = false;
     this.editingEventId = null;
     this.formData = {
@@ -261,7 +311,8 @@ export class AdminEventsComponent implements OnInit {
       description: '',
       summary: '',
       location: '',
-      organizer: '',
+      organizer: defaultDepartment,
+      department: defaultDepartment,
       capacity: 50,
       image: '',
       status: 'active'
@@ -285,6 +336,8 @@ export class AdminEventsComponent implements OnInit {
   }
 
   openComments(event: HubEvent): void {
+    if (!this.authService.canManageDepartment(event.department)) return;
+
     this.editorOpen = false;
     this.menuOpen = false;
     this.commentsEvent = event;
@@ -301,7 +354,7 @@ export class AdminEventsComponent implements OnInit {
   }
 
   submitComment(): void {
-    if (!this.commentsEvent) return;
+    if (!this.commentsEvent || !this.authService.canManageDepartment(this.commentsEvent.department)) return;
 
     const author = this.currentUser?.fullName ?? 'Anonymous';
     const role = this.currentUser?.role ?? 'admin';
@@ -315,12 +368,13 @@ export class AdminEventsComponent implements OnInit {
   }
 
   deleteComment(commentId: string): void {
-    if (!this.commentsEvent) return;
+    if (!this.commentsEvent || !this.authService.canManageDepartment(this.commentsEvent.department)) return;
     this.engagement.deleteComment(this.commentsEvent.id, commentId);
     this.eventComments = this.engagement.getComments(this.commentsEvent.id);
   }
 
   toggleAvailability(event: HubEvent): void {
+    if (!this.authService.canManageDepartment(event.department)) return;
     const status = this.getEventStatus(event);
     event.status = status === 'inactive' ? 'active' : 'inactive';
     this.saveEvents();
@@ -334,7 +388,7 @@ export class AdminEventsComponent implements OnInit {
         url: window.location.href
       });
     } else {
-      const shareText = `${event.title}\\n${event.summary || event.description}\\n${window.location.href}`;
+      const shareText = `${event.title}\n${event.summary || event.description}\n${window.location.href}`;
       navigator.clipboard.writeText(shareText).then(() => {
         alert('Event details copied to clipboard!');
       });
@@ -369,5 +423,21 @@ export class AdminEventsComponent implements OnInit {
     if (status === 'draft') return 'draft';
     if (status === 'inactive') return 'Inactive';
     return 'Active';
+  }
+
+  get eventsHeading(): string {
+    return this.authService.isMainAdmin() ? 'All Department Events' : 'Your Department Events';
+  }
+
+  get canChooseDepartment(): boolean {
+    return this.authService.isMainAdmin();
+  }
+
+  private getManagedDepartment(fallbackDepartment?: string): string {
+    if (this.authService.isMainAdmin()) {
+      return this.formData.department || fallbackDepartment || this.departmentOptions[0];
+    }
+
+    return this.currentUser?.department || fallbackDepartment || '';
   }
 }
