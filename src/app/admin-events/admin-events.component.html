@@ -49,6 +49,157 @@
   </section>
 
   <main>
+    <section class="analytics-section" *ngIf="analyticsEvents.length > 0" aria-label="Event analytics">
+      <div class="analytics-heading">
+        <div>
+          <p class="analytics-kicker">Admin dashboard analytics</p>
+          <h3>Engagement snapshot</h3>
+          <p class="analytics-copy">{{ analyticsSummary }}</p>
+        </div>
+      </div>
+
+      <div class="analytics-cards">
+        <article class="analytics-card">
+          <span class="analytics-label">Comments</span>
+          <strong>{{ formatCount(analyticsComments) }}</strong>
+          <p>Total comments across your managed events</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Likes</span>
+          <strong>{{ formatCount(analyticsLikes) }}</strong>
+          <p>Total likes collected from all event posts</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Shares</span>
+          <strong>{{ formatCount(analyticsShares) }}</strong>
+          <p>Successful shares from dashboard and admin views</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Attendance</span>
+          <strong>{{ formatCount(analyticsAttendance) }}</strong>
+          <p>Estimated attendees based on turnout per event</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Registered</span>
+          <strong>{{ formatCount(analyticsRegistered) }}</strong>
+          <p>Total registered participants across managed events</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Overall feedback</span>
+          <strong>{{ formatFeedback(analyticsFeedbackAverage) }}/5</strong>
+          <p>Average event sentiment and turnout score</p>
+        </article>
+      </div>
+
+      <div class="analytics-grid">
+        <section class="chart-panel" aria-label="Comments likes and shares chart">
+          <div class="chart-head">
+            <h4>Comments, likes and shares</h4>
+            <div class="chart-legend">
+              <span class="legend-chip comments-chip">Comments</span>
+              <span class="legend-chip likes-chip">Likes</span>
+              <span class="legend-chip shares-chip">Shares</span>
+            </div>
+          </div>
+
+          <div class="chart-rows">
+            <div class="chart-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ metric.department }}</span>
+              </div>
+
+              <div class="metric-stack">
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar comments-bar" [style.width.%]="getAnalyticsBarWidth(metric.comments)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.comments) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar likes-bar" [style.width.%]="getAnalyticsBarWidth(metric.likes)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.likes) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar shares-bar" [style.width.%]="getAnalyticsBarWidth(metric.shares)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.shares) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-panel" aria-label="Attendance and registrations chart">
+          <div class="chart-head">
+            <h4>Attendance vs registered</h4>
+            <div class="chart-legend">
+              <span class="legend-chip attendance-chip">Attendance</span>
+              <span class="legend-chip registered-chip">Registered</span>
+            </div>
+          </div>
+
+          <div class="chart-rows">
+            <div class="chart-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ formatCount(metric.attendance) }} attended</span>
+              </div>
+
+              <div class="metric-stack">
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar attendance-bar" [style.width.%]="getAttendanceBarWidth(metric.attendance)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.attendance) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar registered-bar" [style.width.%]="getAttendanceBarWidth(metric.registered)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.registered) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-panel feedback-panel" aria-label="Overall event feedback chart">
+          <div class="chart-head">
+            <h4>Overall event feedback</h4>
+            <p class="chart-note">Calculated from turnout, likes, comments and shares.</p>
+          </div>
+
+          <div class="feedback-list">
+            <div class="feedback-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ metric.department }}</span>
+              </div>
+
+              <div class="feedback-meter">
+                <span class="feedback-track">
+                  <span class="feedback-bar" [style.width.%]="getFeedbackBarWidth(metric.feedback)"></span>
+                </span>
+                <strong>{{ formatFeedback(metric.feedback) }}/5</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <h3 class="events-heading">{{ eventsHeading }}</h3>
 
     <section class="events-row" aria-label="Your events">

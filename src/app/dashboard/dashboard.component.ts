@@ -117,16 +117,23 @@ export class DashboardComponent implements OnInit {
 
   shareEvent(event: HubEvent): void {
     if (navigator.share) {
-      navigator.share({
+      void navigator.share({
         title: event.title,
         text: event.description,
         url: window.location.href
+      }).then(() => {
+        this.engagement.trackShare(event.id);
+      }).catch(() => {
+      });
+    } else if (navigator.clipboard?.writeText) {
+      const shareText = `${event.title}\n${event.description}\n${window.location.href}`;
+      void navigator.clipboard.writeText(shareText).then(() => {
+        this.engagement.trackShare(event.id);
+        alert('Event details copied to clipboard!');
+      }).catch(() => {
       });
     } else {
-      const shareText = `${event.title}\n${event.description}\n${window.location.href}`;
-      navigator.clipboard.writeText(shareText).then(() => {
-        alert('Event details copied to clipboard!');
-      });
+      alert('Sharing is not available in this browser.');
     }
   }
 

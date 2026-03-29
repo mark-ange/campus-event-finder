@@ -31,6 +31,18 @@ interface EventFormData {
   registrations?: number;
 }
 
+interface AdminEventAnalytics {
+  id: string;
+  title: string;
+  department: string;
+  comments: number;
+  likes: number;
+  shares: number;
+  attendance: number;
+  registered: number;
+  feedback: number;
+}
+
 @Component({
   selector: 'app-admin-events',
   standalone: true,
@@ -56,6 +68,15 @@ export class AdminEventsComponent implements OnInit {
 
   private eventCatalog: HubEvent[] = [];
   events: HubEvent[] = [];
+  analyticsEvents: AdminEventAnalytics[] = [];
+  analyticsComments = 0;
+  analyticsLikes = 0;
+  analyticsShares = 0;
+  analyticsAttendance = 0;
+  analyticsRegistered = 0;
+  analyticsFeedbackAverage = 0;
+  analyticsEngagementMax = 1;
+  analyticsAttendanceMax = 1;
   isEditing = false;
   editingEventId: string | null = null;
   commentsEvent: HubEvent | null = null;
@@ -124,6 +145,7 @@ export class AdminEventsComponent implements OnInit {
       ? this.eventCatalog.slice()
       : scopeEventsToDepartment(this.eventCatalog, this.currentUser?.department ?? '');
     this.events = sortEventsForDisplay(managedEvents);
+    this.refreshAnalytics();
     this.ensurePageInRange();
   }
 
@@ -333,6 +355,7 @@ export class AdminEventsComponent implements OnInit {
 
   likeEvent(event: HubEvent): void {
     this.engagement.like(event.id);
+    this.refreshAnalytics();
   }
 
   openComments(event: HubEvent): void {
@@ -365,12 +388,14 @@ export class AdminEventsComponent implements OnInit {
     });
     this.commentText = '';
     this.eventComments = this.engagement.getComments(this.commentsEvent.id);
+    this.refreshAnalytics();
   }
 
   deleteComment(commentId: string): void {
     if (!this.commentsEvent || !this.authService.canManageDepartment(this.commentsEvent.department)) return;
     this.engagement.deleteComment(this.commentsEvent.id, commentId);
     this.eventComments = this.engagement.getComments(this.commentsEvent.id);
+    this.refreshAnalytics();
   }
 
   toggleAvailability(event: HubEvent): void {
@@ -378,21 +403,101 @@ export class AdminEventsComponent implements OnInit {
     const status = this.getEventStatus(event);
     event.status = status === 'inactive' ? 'active' : 'inactive';
     this.saveEvents();
+    this.refreshDepartmentEvents();
   }
 
   shareEvent(event: HubEvent): void {
     if (navigator.share) {
-      navigator.share({
+      void navigator.share({
         title: event.title,
         text: event.summary || event.description,
         url: window.location.href
+      }).then(() => {
+        this.engagement.trackShare(event.id);
+        this.refreshAnalytics();
+      }).catch(() => {
+      });
+    } else if (navigator.clipboard?.writeText) {
+      const shareText = `${event.title}\n${event.summary || event.description}\n${window.location.href}`;
+      void navigator.clipboard.writeText(shareText).then(() => {
+        this.engagement.trackShare(event.id);
+        this.refreshAnalytics();
+        alert('Event details copied to clipboard!');
+      }).catch(() => {
       });
     } else {
-      const shareText = `${event.title}\n${event.summary || event.description}\n${window.location.href}`;
-      navigator.clipboard.writeText(shareText).then(() => {
-        alert('Event details copied to clipboard!');
-      });
+      alert('Sharing is not available in this browser.');
     }
+  }
+
+  getShareCount(eventId: string): number {
+    return this.engagement.getShares(eventId);
+  }
+
+  getAnalyticsBarWidth(value: number): number {
+    return this.scalePercent(value, this.analyticsEngagementMax);
+  }
+
+  getAttendanceBarWidth(value: number): number {
+    return this.scalePercent(value, this.analyticsAttendanceMax);
+  }
+
+  getFeedbackBarWidth(value: number): number {
+    if (value <= 0) return 0;
+    return Math.max(12, (value / 5) * 100);
+  }
+
+  formatFeedback(value: number): string {
+    return value.toFixed(1);
+  }
+
+  get analyticsSummary(): string {
+    return this.authService.isMainAdmin()
+      ? 'Monitoring engagement across every department event in the hub.'
+      : `Monitoring engagement for ${this.currentUser?.department || 'your department'} events.`;
+  }
+
+  private refreshAnalytics(): void {
+    const metrics = this.events.map(event => this.buildAnalytics(event));
+    this.analyticsEvents = metrics.slice(0, 6);
+    this.analyticsComments = metrics.reduce((sum, metric) => sum + metric.comments, 0);
+    this.analyticsLikes = metrics.reduce((sum, metric) => sum + metric.likes, 0);
+    this.analyticsShares = metrics.reduce((sum, metric) => sum + metric.shares, 0);
+    this.analyticsAttendance = metrics.reduce((sum, metric) => sum + metric.attendance, 0);
+    this.analyticsRegistered = metrics.reduce((sum, metric) => sum + metric.registered, 0);
+
+    const feedbackTotal = metrics.reduce((sum, metric) => sum + metric.feedback, 0);
+    this.analyticsFeedbackAverage = metrics.length > 0 ? feedbackTotal / metrics.length : 0;
+    this.analyticsEngagementMax = Math.max(
+      1,
+      ...this.analyticsEvents.flatMap(metric => [metric.comments, metric.likes, metric.shares])
+    );
+    this.analyticsAttendanceMax = Math.max(
+      1,
+      ...this.analyticsEvents.flatMap(metric => [metric.attendance, metric.registered])
+    );
+  }
+
+  private buildAnalytics(event: HubEvent): AdminEventAnalytics {
+    return {
+      id: event.id,
+      title: event.title,
+      department: event.department,
+      comments: this.engagement.getCommentCount(event.id),
+      likes: this.engagement.getLikes(event.id),
+      shares: this.engagement.getShares(event.id),
+      attendance: this.engagement.getAttendance(event),
+      registered: event.registrations,
+      feedback: this.engagement.getFeedbackScore(event)
+    };
+  }
+
+  private scalePercent(value: number, max: number): number {
+    if (value <= 0 || max <= 0) {
+      return 0;
+    }
+
+    return Math.max(8, (value / max) * 100);
   }
 
   onImageError(event: Event): void {
